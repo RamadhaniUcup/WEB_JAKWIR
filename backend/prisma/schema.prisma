@@ -1,15 +1,190 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+enum StatusAktif {
+  AKTIF
+  TIDAK_AKTIF @map("TIDAK AKTIF")
+}
+
+enum JenisFaktor {
+  CORE
+  SECONDARY
+}
+
+enum StatusPeminjaman {
+  DITERIMA
+  DITOLAK
+  DIPROSES
+}
+
+enum Role {
+  SUPER_ADMIN @map("SUPER ADMIN")
+  ADMIN
+}
+
+enum StatusHunian {
+  MILIK_SENDIRI
+  SEWA
+  KONTRAK
+  BERSAMA_ORANG_TUA
+}
+
+enum StatusPekerjaan {
+  KARYAWAN_TETAP
+  KARYAWAN_KONTRAK
+  WIRAUSAHA
+  TIDAK_BEKERJA
+}
+
+enum TingkatRisiko {
+  RENDAH
+  MENENGAH
+  TINGGI
+}
+
+model Kreditur {
+  idKreditur     Int         @id @default(autoincrement()) @map("id_kreditur")
+  namaPerusahaan String      @map("nama_perusahaan") @db.VarChar(50)
+  alamat         String      @db.VarChar(255)
+  statusAktif    StatusAktif @default(AKTIF) @map("status_aktif")
+
+  aspek     Aspek[]
+  pengajuan Pengajuan[]
+  users     Users[]
+
+  @@map("kreditur")
+}
+
+model Aspek {
+  idAspek      Int      @id @default(autoincrement()) @map("id_aspek")
+  idKreditur   Int      @map("id_kreditur")
+  namaAspek    String   @map("nama_aspek") @db.VarChar(50)
+  persentaseCf Decimal  @map("persentase_cf") @db.Decimal(5, 2)
+  persentaseSf Decimal  @map("persentase_sf") @db.Decimal(5, 2)
+  bobotAspek   Decimal  @map("bobot_aspek") @db.Decimal(5, 2)
+
+  kreditur Kreditur @relation(fields: [idKreditur], references: [idKreditur], onDelete: Cascade, onUpdate: Cascade)
+  kriteria Kriteria[]
+
+  @@map("aspek")
+}
+
+model Kriteria {
+  idKriteria   Int         @id @default(autoincrement()) @map("id_kriteria")
+  idAspek      Int         @map("id_aspek")
+  kodeKriteria String      @map("kode_kriteria") @db.Char(5)
+  namaKriteria String      @map("nama_kriteria") @db.VarChar(100)
+  nilaiTarget  Int         @map("nilai_target")
+  jenisFaktor  JenisFaktor @map("jenis_faktor")
+
+  aspek        Aspek       @relation(fields: [idAspek], references: [idAspek], onDelete: Cascade, onUpdate: Cascade)
+  subKriteria  SubKriteria[]
+
+  @@map("kriteria")
+}
+
+model SubKriteria {
+  idSub       Int      @id @default(autoincrement()) @map("id_sub")
+  idKriteria  Int      @map("id_kriteria")
+  deskripsi   String   @db.VarChar(255)
+  nilaiRating Int      @map("nilai_rating")
+
+  kriteria  Kriteria    @relation(fields: [idKriteria], references: [idKriteria], onDelete: Cascade, onUpdate: Cascade)
+  penilaian Penilaian[]
+
+  @@map("sub_kriteria")
+}
+
+model Debitur {
+  idDebitur   Int      @id @default(autoincrement()) @map("id_debitur")
+  namaDebitur String   @map("nama_debitur") @db.VarChar(50)
+  nik         String   @db.VarChar(255) // Menyimpan data NIK terenkripsi AES-256
+  telepon     String   @db.VarChar(20)
+  alamat      String   @db.VarChar(255) // Menyimpan data Alamat terenkripsi AES-256
+  password    String   @db.VarChar(255)
+  email       String   @unique @db.VarChar(50)
+
+  pengajuan Pengajuan[]
+
+  @@map("debitur")
+}
+
+model Pengajuan {
+  idPengajuan      Int              @id @default(autoincrement()) @map("id_pengajuan")
+  tanggalPengajuan DateTime         @map("tanggal_pengajuan") @db.Date
+  statusPeminjaman StatusPeminjaman @default(DIPROSES) @map("status_peminjaman")
+  idDebitur        Int              @map("id_debitur")
+  idKreditur       Int              @map("id_kreditur")
+  jumlahKredit     Decimal          @map("jumlah_kredit") @db.Decimal(15, 2)
+  lamaTenor        Int              @map("lama_tenor")
+
+  debitur   Debitur   @relation(fields: [idDebitur], references: [idDebitur], onDelete: Cascade, onUpdate: Cascade)
+  kreditur  Kreditur  @relation(fields: [idKreditur], references: [idKreditur], onDelete: Cascade, onUpdate: Cascade)
+  penilaian Penilaian[]
+  
+  // Relasi One-to-One dengan SurveyLapangan
+  survey    SurveyLapangan?
+
+  @@map("pengajuan")
+}
+
+model SurveyLapangan {
+  idSurvey            Int             @id @default(autoincrement()) @map("id_survey")
+  idPengajuan         Int             @unique @map("id_pengajuan")
+  totalAset           Decimal         @map("total_aset") @db.Decimal(15, 2)
+  pendapatanBersih    Decimal         @map("pendapatan_bersih") @db.Decimal(15, 2)
+  statusHunian        StatusHunian    @map("status_hunian")
+  statusPekerjaan     StatusPekerjaan @map("status_pekerjaan")
+  jumlahTanggungan    Int             @map("jumlah_tanggungan")
+  nilaiJaminanAset    Decimal         @map("nilai_jaminan_aset") @db.Decimal(15, 2)
+  rasioHutang         Decimal         @map("rasio_hutang") @db.Decimal(5, 2)
+  persentaseJaminan   Decimal         @map("persentase_jaminan") @db.Decimal(5, 2)
+  skorProfileMatching Decimal         @map("skor_profile_matching") @db.Decimal(5, 2)
+  tingkatRisiko       TingkatRisiko   @map("tingkat_risiko")
+
+  pengajuan           Pengajuan       @relation(fields: [idPengajuan], references: [idPengajuan], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("survey_lapangan")
+}
+
+model Penilaian {
+  idPenilaian Int @id @default(autoincrement()) @map("id_penilaian")
+  idPengajuan Int @map("id_pengajuan")
+  idSub       Int @map("id_sub")
+
+  pengajuan   Pengajuan   @relation(fields: [idPengajuan], references: [idPengajuan], onDelete: Cascade, onUpdate: Cascade)
+  subKriteria SubKriteria @relation(fields: [idSub], references: [idSub], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("penilaian")
+}
+
+model BobotGap {
+  idBobotGap Int     @id @default(autoincrement()) @map("id_bobot_gap")
+  selisihGap Int     @map("selisih_gap")
+  bobotNilai Decimal @map("bobot_nilai") @db.Decimal(4, 2)
+  keterangan String? @db.VarChar(50)
+
+  @@map("bobot_gap")
+}
+
+model Users {
+  idUser     Int      @id @default(autoincrement()) @map("id_user")
+  username   String   @db.VarChar(50)
+  password   String   @db.VarChar(255)
+  email      String   @unique @db.VarChar(50)
+  role       Role
+  idKreditur Int?     @map("id_kreditur")
+
+  kreditur Kreditur? @relation(fields: [idKreditur], references: [idKreditur], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("users")
 }

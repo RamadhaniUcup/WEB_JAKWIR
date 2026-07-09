@@ -1,17 +1,31 @@
 import { useState, type FC, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GlassCard } from "../../components/common/glasscard";
+import { useLoginMutation } from "../../hooks/useApi.js";
+import { GlassCard } from "../../components/common/glasscard.js";
 
 export const LoginKreditur: FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
+
+  const loginMutation = useLoginMutation();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    console.log("Login Kreditur:", { email, password });
-    // Simulasi login sukses, arahkan ke dashboard mitra
-    navigate("/kreditur/dashboard");
+    setErrorMsg("");
+
+    loginMutation.mutate(
+      { email, password, isAdmin: true },
+      {
+        onSuccess: () => {
+          navigate("/kreditur/dashboard");
+        },
+        onError: (err: any) => {
+          setErrorMsg(err?.response?.data?.message || "Login gagal. Periksa email atau password mitra.");
+        },
+      }
+    );
   };
 
   return (
@@ -29,6 +43,12 @@ export const LoginKreditur: FC = () => {
           <p className="text-xs text-slate-400 mt-2">Masuk ke dashboard lembaga pembiayaan Anda</p>
         </div>
 
+        {errorMsg && (
+          <div className="p-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold text-center">
+            {errorMsg}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Email Lembaga Mitra</label>
@@ -36,7 +56,7 @@ export const LoginKreditur: FC = () => {
               type="email" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
-              className="w-full px-4 py-3 bg-white/3 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition text-sm" 
+              className="w-full px-4 py-3 bg-white/3 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition text-sm" 
               placeholder="mitra@indofund.id" 
               required 
             />
@@ -47,22 +67,25 @@ export const LoginKreditur: FC = () => {
               type="password" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
-              className="w-full px-4 py-3 bg-white/3 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition text-sm" 
+              className="w-full px-4 py-3 bg-white/3 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition text-sm" 
               placeholder="••••••••" 
               required 
             />
           </div>
           
-          <div className="flex items-center justify-between text-xs pt-1">
-            <label className="flex items-center text-slate-400 font-medium">
-              <input type="checkbox" className="mr-2 rounded border-white/10 bg-white/5 text-cyan-500 focus:ring-0 cursor-pointer" />
-              Ingat akun ini
-            </label>
-            <a href="#" className="text-cyan-400 hover:underline font-semibold">Lupa Sandi?</a>
-          </div>
-
-          <button type="submit" className="w-full py-3 mt-4 bg-linear-to-r from-cyan-500 to-indigo-500 text-slate-950 font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-cyan-500/10 cursor-pointer">
-            Masuk Portal Mitra
+          <button 
+            type="submit" 
+            disabled={loginMutation.isPending}
+            className="w-full py-3 mt-4 bg-linear-to-r from-cyan-500 to-indigo-500 text-slate-950 font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-cyan-500/10 cursor-pointer flex items-center justify-center gap-2"
+          >
+            {loginMutation.isPending ? (
+              <>
+                <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
+                Memproses Portal...
+              </>
+            ) : (
+              "Masuk Portal Mitra"
+            )}
           </button>
         </form>
 

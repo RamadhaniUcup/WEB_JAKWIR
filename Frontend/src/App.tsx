@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import MainLayout from "./layouts/mainLayouts.tsx";
 import { KrediturDashboardLayout } from "./layouts/KrediturDashboardLayouts.tsx";
 
+// Protected Route Wrapper
+import ProtectedRoute from "./routes/ProtectedRoutes.tsx";
+
 // Pages - Publik & Debitur
 import Beranda from "./pages/beranda.tsx";
 import { InfoAplikasi } from "./pages/InfoAplikasi.tsx";
@@ -13,11 +16,13 @@ import { HistoryPengajuan } from "./pages/debitur/HistoryPengajuan.tsx";
 import { EditProfile } from "./pages/debitur/EditProfile.tsx";
 import { PengajuanKredit } from "./pages/debitur/PengajuanKredit.tsx";
 import { LoginDebitur } from "./pages/auth/LoginDebitur.tsx";
+import { RegisterDebitur } from "./pages/auth/RegisterDebitur.tsx";
 import { LoginKreditur } from "./pages/auth/LoginKreditur.tsx";
 
 // Pages - Kreditur
 import { LandingKreditur } from "./pages/kreditur/LandingKreditur.tsx";
 import { DashboardKreditur } from "./pages/kreditur/DashboardKreditur.tsx";
+import { DataPengajuan } from "./pages/kreditur/DataPengajuan.tsx";
 
 const queryClient = new QueryClient();
 
@@ -27,30 +32,45 @@ function App() {
       <BrowserRouter>
         <Routes>
           
-          {/* Rute Publik & Debitur (Menggunakan MainLayout bersarang) */}
+          {/* Rute Publik & Debitur */}
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Beranda />} />
             <Route path="info" element={<InfoAplikasi />} />
-            <Route path="debitur/kreditur" element={<DataKreditur />} />
-            <Route path="debitur/pengajuan" element={<PengajuanKredit />} />
-            <Route path="debitur/history" element={<HistoryPengajuan />} />
-            <Route path="debitur/edit-profile" element={<EditProfile />} />
+            
+            {/* Rute khusus nasabah / debitur yang masuk ke sistem */}
+            <Route element={<ProtectedRoute allowedRoles={["DEBITUR"]} />}>
+              <Route path="debitur/kreditur" element={<DataKreditur />} />
+              <Route path="debitur/pengajuan" element={<PengajuanKredit />} />
+              <Route path="debitur/history" element={<HistoryPengajuan />} />
+              <Route path="debitur/edit-profile" element={<EditProfile />} />
+            </Route>
           </Route>
 
           {/* Rute Bebas (Tanpa MainLayout) */}
           <Route path="/debitur/login" element={<LoginDebitur />} />
+          <Route path="/debitur/register" element={<RegisterDebitur />} />
           <Route path="/kreditur/login" element={<LoginKreditur />} />
           <Route path="/kreditur/landing" element={<LandingKreditur />} />
 
-          {/* Rute Khusus Admin Kreditur (Menggunakan Layout Dashboard) */}
-          <Route 
-            path="/kreditur/dashboard" 
-            element={
-              <KrediturDashboardLayout>
-                <DashboardKreditur />
-              </KrediturDashboardLayout>
-            } 
-          />
+          {/* Rute khusus admin kreditur yang terproteksi */}
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN", "SUPER ADMIN"]} />}>
+            <Route 
+              path="/kreditur/dashboard" 
+              element={
+                <KrediturDashboardLayout>
+                  <DashboardKreditur />
+                </KrediturDashboardLayout>
+              } 
+            />
+            <Route 
+              path="/kreditur/pengajuan" 
+              element={
+                <KrediturDashboardLayout>
+                  <DataPengajuan />
+                </KrediturDashboardLayout>
+              } 
+            />
+          </Route>
 
         </Routes>
       </BrowserRouter>
