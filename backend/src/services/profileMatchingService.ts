@@ -238,6 +238,10 @@ export async function processSurveyMapping(
     nilaiJaminanAset: number;
     rasioHutang: number;
     persentaseJaminan: number;
+    idSubPendapatan?: number | undefined;
+    idSubHunian?: number | undefined;
+    idSubPekerjaan?: number | undefined;
+    idSubTanggungan?: number | undefined;
   }
 ): Promise<void> {
   const pengajuan = await prisma.pengajuan.findUnique({
@@ -292,14 +296,32 @@ export async function processSurveyMapping(
     } else if (key.includes("ASET") || key.includes("KEKAYAAN") || key.includes("C7")) {
       rawValue = surveyInput.totalAset;
     } else {
-      // Jika kriteria tidak terpetakan secara otomatis, gunakan nilai jaminan aset atau default
       rawValue = surveyInput.nilaiJaminanAset;
     }
 
-    // Cari sub_kriteria yang cocok dengan rawValue menggunakan matchDescription
-    let matchedSub = kriteria.subKriteria.find((sub) => matchDescription(rawValue, sub.deskripsi));
+    // Jika admin memilih dropdown spesifik, gunakan ID tersebut
+    let matchedSubId = 0;
+    if ((key.includes("PENDAPATAN") || key.includes("C1")) && surveyInput.idSubPendapatan) {
+      matchedSubId = Number(surveyInput.idSubPendapatan);
+    } else if ((key.includes("HUNIAN") || key.includes("TINGGAL") || key.includes("C4")) && surveyInput.idSubHunian) {
+      matchedSubId = Number(surveyInput.idSubHunian);
+    } else if ((key.includes("PEKERJAAN") || key.includes("STATUS_KERJA") || key.includes("C5")) && surveyInput.idSubPekerjaan) {
+      matchedSubId = Number(surveyInput.idSubPekerjaan);
+    } else if ((key.includes("TANGGUNGAN") || key.includes("KELUARGA") || key.includes("C6")) && surveyInput.idSubTanggungan) {
+      matchedSubId = Number(surveyInput.idSubTanggungan);
+    }
 
-    // Fallback jika tidak ada aturan yang cocok, ambil nilai target kriteria atau rating terendah
+    let matchedSub;
+    if (matchedSubId > 0) {
+      matchedSub = kriteria.subKriteria.find((sub) => sub.idSub === matchedSubId);
+    }
+
+    // Fallback pencocokan deskripsi teks
+    if (!matchedSub) {
+      matchedSub = kriteria.subKriteria.find((sub) => matchDescription(rawValue, sub.deskripsi));
+    }
+
+    // Fallback jika tidak ada aturan yang cocok, ambil nilai rating terendah
     if (!matchedSub) {
       matchedSub = kriteria.subKriteria.sort((a, b) => a.nilaiRating - b.nilaiRating)[0];
     }

@@ -52,5 +52,9 @@ export declare function processSurveyMapping(idPengajuan: number, surveyInput: {
     nilaiJaminanAset: number;
     rasioHutang: number;
     persentaseJaminan: number;
+    idSubPendapatan?: number | undefined;
+    idSubHunian?: number | undefined;
+    idSubPekerjaan?: number | undefined;
+    idSubTanggungan?: number | undefined;
 }): Promise<void>;
 //# sourceMappingURL=profileMatchingService.d.ts.map

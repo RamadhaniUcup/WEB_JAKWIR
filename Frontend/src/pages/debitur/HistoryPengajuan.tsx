@@ -14,6 +14,8 @@ interface HistoryItem {
   survey?: {
     skorProfileMatching: string;
     tingkatRisiko: "RENDAH" | "MENENGAH" | "TINGGI";
+    rasioHutang?: string;
+    persentaseJaminan?: string;
   } | null;
 }
 
@@ -97,6 +99,16 @@ export const HistoryPengajuan: FC = () => {
                       }`}>
                         Risiko: {item.survey.tingkatRisiko}
                       </span>
+                      {item.survey.rasioHutang && (
+                        <span className="text-[10px] bg-white/5 border border-white/10 text-slate-300 px-2 py-1 rounded-lg font-semibold">
+                          DTI: {item.survey.rasioHutang}%
+                        </span>
+                      )}
+                      {item.survey.persentaseJaminan && (
+                        <span className="text-[10px] bg-white/5 border border-white/10 text-slate-300 px-2 py-1 rounded-lg font-semibold">
+                          Jaminan: {item.survey.persentaseJaminan}% / {Number(item.survey.persentaseJaminan) >= 100 ? "Overcollateralized" : "Undercollateralized"}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

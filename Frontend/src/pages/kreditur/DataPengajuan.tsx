@@ -324,31 +324,35 @@ export const DataPengajuan: FC = () => {
                 {/* Tampilkan Kalkulasi Rasio & Keputusan jika survey sudah diinput */}
                 {selectedPengajuan.survey && (
                   <div className="border-t border-white/5 pt-4 space-y-4">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Hasil SPK Profile Matching</h4>
-                    <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-[10px] text-slate-500">Rasio Hutang (DTI)</p>
-                        <p className="text-sm font-bold text-slate-200">{selectedPengajuan.survey.rasioHutang}%</p>
+                    <GlassCard className="p-4 bg-white/[0.02] border border-indigo-500/20" hoverEffect={false}>
+                      <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3">Kalkulasi & Analisis Sistem</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Rasio Hutang (DTI)</p>
+                          <p className="text-sm font-bold text-slate-200">{selectedPengajuan.survey.rasioHutang}%</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Kecukupan Jaminan</p>
+                          <p className={`text-xs font-extrabold ${Number(selectedPengajuan.survey.persentaseJaminan) >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            {selectedPengajuan.survey.persentaseJaminan}% / {Number(selectedPengajuan.survey.persentaseJaminan) >= 100 ? "Overcollateralized" : "Undercollateralized"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Skor Akhir SPK</p>
+                          <p className="text-lg font-extrabold text-indigo-400">{selectedPengajuan.survey.skorProfileMatching} / 5.00</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Tingkat Risiko</p>
+                          <span className={`inline-block mt-0.5 px-2 py-0.5 text-xs font-bold rounded ${
+                            selectedPengajuan.survey.tingkatRisiko === "RENDAH" ? "bg-emerald-500/10 text-emerald-400" :
+                            selectedPengajuan.survey.tingkatRisiko === "MENENGAH" ? "bg-amber-500/10 text-amber-400" :
+                            "bg-red-500/10 text-red-400"
+                          }`}>
+                            {selectedPengajuan.survey.tingkatRisiko}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-slate-500">Persentase Jaminan</p>
-                        <p className="text-sm font-bold text-slate-200">{selectedPengajuan.survey.persentaseJaminan}%</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-slate-500">Skor Akhir SPK</p>
-                        <p className="text-lg font-extrabold text-indigo-400">{selectedPengajuan.survey.skorProfileMatching} / 5.00</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-slate-500">Tingkat Risiko</p>
-                        <span className={`inline-block mt-0.5 px-2 py-0.5 text-xs font-bold rounded ${
-                          selectedPengajuan.survey.tingkatRisiko === "RENDAH" ? "bg-emerald-500/10 text-emerald-400" :
-                          selectedPengajuan.survey.tingkatRisiko === "MENENGAH" ? "bg-amber-500/10 text-amber-400" :
-                          "bg-red-500/10 text-red-400"
-                        }`}>
-                          {selectedPengajuan.survey.tingkatRisiko}
-                        </span>
-                      </div>
-                    </div>
+                    </GlassCard>
 
                     {/* Tombol Keputusan Pengajuan */}
                     {selectedPengajuan.statusPeminjaman === "DIPROSES" && (

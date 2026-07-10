@@ -105,7 +105,11 @@ export async function inputSurveyAndCalculate(req: AuthenticatedRequest, res: Re
       statusHunian, 
       statusPekerjaan, 
       jumlahTanggungan, 
-      nilaiJaminanAset 
+      nilaiJaminanAset,
+      idSubPendapatan,
+      idSubHunian,
+      idSubPekerjaan,
+      idSubTanggungan
     } = req.body;
 
     if (!idKrediturAdmin) {
@@ -157,6 +161,10 @@ export async function inputSurveyAndCalculate(req: AuthenticatedRequest, res: Re
       nilaiJaminanAset: Number(nilaiJaminanAset),
       rasioHutang,
       persentaseJaminan,
+      idSubPendapatan: idSubPendapatan ? Number(idSubPendapatan) : undefined,
+      idSubHunian: idSubHunian ? Number(idSubHunian) : undefined,
+      idSubPekerjaan: idSubPekerjaan ? Number(idSubPekerjaan) : undefined,
+      idSubTanggungan: idSubTanggungan ? Number(idSubTanggungan) : undefined,
     };
 
     // 8. Auto-Calculate Profile Matching (Mapping & Perhitungan)
@@ -180,6 +188,10 @@ export async function inputSurveyAndCalculate(req: AuthenticatedRequest, res: Re
         persentaseJaminan,
         skorProfileMatching: hasilSPK.skorAkhir,
         tingkatRisiko: hasilSPK.tingkatRisiko,
+        idSubPendapatan: idSubPendapatan ? Number(idSubPendapatan) : null,
+        idSubHunian: idSubHunian ? Number(idSubHunian) : null,
+        idSubPekerjaan: idSubPekerjaan ? Number(idSubPekerjaan) : null,
+        idSubTanggungan: idSubTanggungan ? Number(idSubTanggungan) : null,
       },
       create: {
         idPengajuan,
@@ -193,6 +205,10 @@ export async function inputSurveyAndCalculate(req: AuthenticatedRequest, res: Re
         persentaseJaminan,
         skorProfileMatching: hasilSPK.skorAkhir,
         tingkatRisiko: hasilSPK.tingkatRisiko,
+        idSubPendapatan: idSubPendapatan ? Number(idSubPendapatan) : null,
+        idSubHunian: idSubHunian ? Number(idSubHunian) : null,
+        idSubPekerjaan: idSubPekerjaan ? Number(idSubPekerjaan) : null,
+        idSubTanggungan: idSubTanggungan ? Number(idSubTanggungan) : null,
       },
     });
 

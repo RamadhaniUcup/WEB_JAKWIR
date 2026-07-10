@@ -2,12 +2,12 @@ import type { FC } from 'react';
 
 export const Footer: FC = () => {
   return (
-    <footer className="bg-slate-955 border-t border-white/10 pt-16 pb-8 text-slate-500 text-xs">
+    <footer className="bg-slate-900 backdrop-blur-md border-t border-white/10 pt-16 pb-8 text-slate-500 text-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-        
+
         {/* Top Section: Brand & Links */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-10 border-b border-white/5">
-          
+
           {/* Brand & Description */}
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center space-x-3 text-white text-base font-bold">
@@ -35,7 +35,7 @@ export const Footer: FC = () => {
 
           {/* Navigation Columns */}
           <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-6 text-slate-400 text-sm">
-            
+
             {/* Column 1: Produk */}
             <div className="space-y-3">
               <p className="text-slate-500 font-semibold text-xs uppercase tracking-wider">
@@ -45,7 +45,7 @@ export const Footer: FC = () => {
               <a href="#" className="block hover:text-white transition-colors">Kredit Multiguna</a>
               <a href="#" className="block hover:text-white transition-colors">Pendanaan Mikro</a>
             </div>
-            
+
             {/* Column 2: Korporasi */}
             <div className="space-y-3">
               <p className="text-slate-500 font-semibold text-xs uppercase tracking-wider">
@@ -55,7 +55,7 @@ export const Footer: FC = () => {
               <a href="#" className="block hover:text-white transition-colors">Kebijakan Privasi</a>
               <a href="#" className="block hover:text-white transition-colors">Syarat & Ketentuan</a>
             </div>
-            
+
             {/* Column 3: Hubungi Kami */}
             <div className="space-y-3 col-span-2 sm:col-span-1">
               <p className="text-slate-500 font-semibold text-xs uppercase tracking-wider">
@@ -64,7 +64,7 @@ export const Footer: FC = () => {
               <p className="text-slate-400 text-xs">support@jakwir.id</p>
               <p className="text-slate-400 text-xs">Jakarta, Indonesia</p>
             </div>
-            
+
           </div>
         </div>
 
@@ -92,7 +92,7 @@ export const Footer: FC = () => {
             <a href="#" className="hover:text-white">Twitter</a>
           </div>
         </div>
-        
+
       </div>
     </footer>
   );

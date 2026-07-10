@@ -56,6 +56,10 @@ model Kreditur {
   namaPerusahaan String      @map("nama_perusahaan") @db.VarChar(50)
   alamat         String      @db.VarChar(255)
   statusAktif    StatusAktif @default(AKTIF) @map("status_aktif")
+  
+  // Kolom batasan pengajuan dari Kreditur
+  limitPengajuan Decimal     @default(0) @map("limit_pengajuan") @db.Decimal(15, 2)
+  limitTenor     Int         @default(12) @map("limit_tenor")
 
   aspek     Aspek[]
   pengajuan Pengajuan[]
@@ -101,15 +105,21 @@ model SubKriteria {
   kriteria  Kriteria    @relation(fields: [idKriteria], references: [idKriteria], onDelete: Cascade, onUpdate: Cascade)
   penilaian Penilaian[]
 
+  // Back-references relasi dengan SurveyLapangan
+  surveyPendapatan SurveyLapangan[] @relation("SubPendapatan")
+  surveyHunian     SurveyLapangan[] @relation("SubHunian")
+  surveyPekerjaan  SurveyLapangan[] @relation("SubPekerjaan")
+  surveyTanggungan SurveyLapangan[] @relation("SubTanggungan")
+
   @@map("sub_kriteria")
 }
 
 model Debitur {
   idDebitur   Int      @id @default(autoincrement()) @map("id_debitur")
   namaDebitur String   @map("nama_debitur") @db.VarChar(50)
-  nik         String   @db.VarChar(255) // Menyimpan data NIK terenkripsi AES-256
+  nik         String   @db.VarChar(255)
   telepon     String   @db.VarChar(20)
-  alamat      String   @db.VarChar(255) // Menyimpan data Alamat terenkripsi AES-256
+  alamat      String   @db.VarChar(255)
   password    String   @db.VarChar(255)
   email       String   @unique @db.VarChar(50)
 
@@ -131,7 +141,6 @@ model Pengajuan {
   kreditur  Kreditur  @relation(fields: [idKreditur], references: [idKreditur], onDelete: Cascade, onUpdate: Cascade)
   penilaian Penilaian[]
   
-  // Relasi One-to-One dengan SurveyLapangan
   survey    SurveyLapangan?
 
   @@map("pengajuan")
@@ -151,7 +160,19 @@ model SurveyLapangan {
   skorProfileMatching Decimal         @map("skor_profile_matching") @db.Decimal(5, 2)
   tingkatRisiko       TingkatRisiko   @map("tingkat_risiko")
 
+  // Kolom Foreign Keys relasi terpilih opsi sub-kriteria
+  idSubPendapatan     Int?            @map("id_sub_pendapatan")
+  idSubHunian         Int?            @map("id_sub_hunian")
+  idSubPekerjaan      Int?            @map("id_sub_pekerjaan")
+  idSubTanggungan     Int?            @map("id_sub_tanggungan")
+
   pengajuan           Pengajuan       @relation(fields: [idPengajuan], references: [idPengajuan], onDelete: Cascade, onUpdate: Cascade)
+  
+  // Relasi pemetaan opsi sub-kriteria dropdown
+  subPendapatan       SubKriteria?    @relation("SubPendapatan", fields: [idSubPendapatan], references: [idSub], onDelete: SetNull, onUpdate: Cascade)
+  subHunian           SubKriteria?    @relation("SubHunian",     fields: [idSubHunian],     references: [idSub], onDelete: SetNull, onUpdate: Cascade)
+  subPekerjaan        SubKriteria?    @relation("SubPekerjaan",  fields: [idSubPekerjaan],  references: [idSub], onDelete: SetNull, onUpdate: Cascade)
+  subTanggungan       SubKriteria?    @relation("SubTanggungan",  fields: [idSubTanggungan],  references: [idSub], onDelete: SetNull, onUpdate: Cascade)
 
   @@map("survey_lapangan")
 }

@@ -8,6 +8,8 @@ import kriteriaRoutes from "./routes/kriteriaRoutes.js";
 import spkRoutes from "./routes/spkRoutes.js";
 import debiturRoutes from "./routes/debiturRoutes.js";
 import pengajuanRoutes from "./routes/pengajuanRoutes.js";
+import superAdminRoutes from "./routes/superAdminRoutes.js";
+import krediturSettingRoutes from "./routes/krediturSettingRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,6 +24,8 @@ app.use("/api/kriteria", kriteriaRoutes);
 app.use("/api/spk", spkRoutes);
 app.use("/api/debitur", debiturRoutes);
 app.use("/api/pengajuan", pengajuanRoutes);
+app.use("/api/super-admin", superAdminRoutes);
+app.use("/api/kreditur-settings", krediturSettingRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

@@ -146,7 +146,7 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
         idUser: user.idUser,
         username: user.username,
         email: user.email,
-        role: user.role,
+        role: user.role === "SUPER_ADMIN" ? "SUPER ADMIN" : "ADMIN",
         kreditur: user.kreditur ? user.kreditur.namaPerusahaan : "Global Admin",
       },
     });
@@ -221,5 +221,60 @@ export async function getPublicKrediturList(req: any, res: Response): Promise<vo
   } catch (error) {
     console.error("Error get public kreditur list:", error);
     res.status(500).json({ message: "Terjadi kesalahan saat mengambil daftar lembaga kreditur." });
+  }
+}
+
+/**
+ * Mengambil detail satu kreditur berdasarkan ID (untuk mengambil batas limit & tenor)
+ */
+export async function getPublicKrediturDetails(req: any, res: Response): Promise<void> {
+  try {
+    const idKreditur = Number(req.params.id);
+    const kreditur = await prisma.kreditur.findUnique({
+      where: { idKreditur }
+    });
+
+    if (!kreditur) {
+      res.status(404).json({ message: "Kreditur tidak ditemukan." });
+      return;
+    }
+
+    res.status(200).json({ data: kreditur });
+  } catch (error) {
+    console.error("Error get public kreditur details:", error);
+    res.status(500).json({ message: "Terjadi kesalahan saat mengambil detail lembaga kreditur." });
+  }
+}
+
+/**
+ * Mengambil statistik agregat publik (untuk counter di landing page)
+ */
+export async function getPublicStats(req: any, res: Response): Promise<void> {
+  try {
+    const totalKreditur = await prisma.kreditur.count({
+      where: { statusAktif: "AKTIF" }
+    });
+
+    const totalDebitur = await prisma.debitur.count();
+
+    const aggregateDana = await prisma.pengajuan.aggregate({
+      where: { statusPeminjaman: "DITERIMA" },
+      _sum: {
+        jumlahKredit: true
+      }
+    });
+
+    const sumDana = Number(aggregateDana._sum.jumlahKredit || 0);
+
+    res.status(200).json({
+      data: {
+        totalKreditur,
+        totalDebitur,
+        totalDanaDisalurkan: sumDana
+      }
+    });
+  } catch (error) {
+    console.error("Error get public stats:", error);
+    res.status(500).json({ message: "Terjadi kesalahan saat mengambil statistik." });
   }
 }

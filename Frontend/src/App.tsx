@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Layouts
 import MainLayout from "./layouts/mainLayouts.tsx";
 import { KrediturDashboardLayout } from "./layouts/KrediturDashboardLayouts.tsx";
+import { SuperAdminDashboardLayout } from "./layouts/SuperAdminDashboardLayouts.tsx";
 
 // Protected Route Wrapper
 import ProtectedRoute from "./routes/ProtectedRoutes.tsx";
@@ -23,6 +24,14 @@ import { LoginKreditur } from "./pages/auth/LoginKreditur.tsx";
 import { LandingKreditur } from "./pages/kreditur/LandingKreditur.tsx";
 import { DashboardKreditur } from "./pages/kreditur/DashboardKreditur.tsx";
 import { DataPengajuan } from "./pages/kreditur/DataPengajuan.tsx";
+import { PengaturanSpk } from "./pages/kreditur/PengaturanSpk.tsx";
+import { PengaturanInstansi } from "./pages/kreditur/PengaturanInstansi.tsx";
+
+// Pages - Super Admin
+import { DashboardSuperAdmin } from "./pages/super-admin/DashboardSuperAdmin.tsx";
+import { ManageKreditur } from "./pages/super-admin/ManageKreditur.tsx";
+import { ManageUsers } from "./pages/super-admin/ManageUsers.tsx";
+import { ManageDebitur } from "./pages/super-admin/ManageDebitur.tsx";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +77,58 @@ function App() {
                 <KrediturDashboardLayout>
                   <DataPengajuan />
                 </KrediturDashboardLayout>
+              } 
+            />
+            <Route 
+              path="/kreditur/settings/spk" 
+              element={
+                <KrediturDashboardLayout>
+                  <PengaturanSpk />
+                </KrediturDashboardLayout>
+              } 
+            />
+            <Route 
+              path="/kreditur/settings/instansi" 
+              element={
+                <KrediturDashboardLayout>
+                  <PengaturanInstansi />
+                </KrediturDashboardLayout>
+              } 
+            />
+          </Route>
+
+          {/* Rute khusus Super Admin */}
+          <Route element={<ProtectedRoute allowedRoles={["SUPER ADMIN"]} />}>
+            <Route 
+              path="/super-admin/dashboard" 
+              element={
+                <SuperAdminDashboardLayout>
+                  <DashboardSuperAdmin />
+                </SuperAdminDashboardLayout>
+              } 
+            />
+            <Route 
+              path="/super-admin/kreditur" 
+              element={
+                <SuperAdminDashboardLayout>
+                  <ManageKreditur />
+                </SuperAdminDashboardLayout>
+              } 
+            />
+            <Route 
+              path="/super-admin/users" 
+              element={
+                <SuperAdminDashboardLayout>
+                  <ManageUsers />
+                </SuperAdminDashboardLayout>
+              } 
+            />
+            <Route 
+              path="/super-admin/debitur" 
+              element={
+                <SuperAdminDashboardLayout>
+                  <ManageDebitur />
+                </SuperAdminDashboardLayout>
               } 
             />
           </Route>

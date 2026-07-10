@@ -18,8 +18,13 @@ export const LoginKreditur: FC = () => {
     loginMutation.mutate(
       { email, password, isAdmin: true },
       {
-        onSuccess: () => {
-          navigate("/kreditur/dashboard");
+        onSuccess: (data) => {
+          const userRole = (data.user as any).role;
+          if (userRole === "SUPER ADMIN") {
+            navigate("/super-admin/dashboard");
+          } else {
+            navigate("/kreditur/dashboard");
+          }
         },
         onError: (err: any) => {
           setErrorMsg(err?.response?.data?.message || "Login gagal. Periksa email atau password mitra.");

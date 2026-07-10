@@ -4,7 +4,9 @@ import {
   loginDebitur, 
   registerDebitur, 
   registerUser,
-  getPublicKrediturList
+  getPublicKrediturList,
+  getPublicKrediturDetails,
+  getPublicStats
 } from "../controllers/authController.js";
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddleware.js";
 
@@ -16,6 +18,8 @@ router.post("/login/debitur", loginDebitur);
 
 // Endpoint Daftar Kreditur Publik (Untuk drop-down pilihan di frontend)
 router.get("/kreditur/public", getPublicKrediturList);
+router.get("/kreditur/public/:id", getPublicKrediturDetails);
+router.get("/stats/public", getPublicStats);
 
 // Endpoint Registrasi Debitur (Nasabah melakukan registrasi mandiri)
 router.post("/register/debitur", registerDebitur);

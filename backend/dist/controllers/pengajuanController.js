@@ -87,7 +87,7 @@ export async function inputSurveyAndCalculate(req, res) {
     try {
         const idPengajuan = Number(req.params.id);
         const idKrediturAdmin = req.user?.idKreditur;
-        const { totalAset, pendapatanBersih, statusHunian, statusPekerjaan, jumlahTanggungan, nilaiJaminanAset } = req.body;
+        const { totalAset, pendapatanBersih, statusHunian, statusPekerjaan, jumlahTanggungan, nilaiJaminanAset, idSubPendapatan, idSubHunian, idSubPekerjaan, idSubTanggungan } = req.body;
         if (!idKrediturAdmin) {
             res.status(403).json({ message: "Forbidden. Hanya admin kreditur yang dapat menginput hasil survey." });
             return;
@@ -128,6 +128,10 @@ export async function inputSurveyAndCalculate(req, res) {
             nilaiJaminanAset: Number(nilaiJaminanAset),
             rasioHutang,
             persentaseJaminan,
+            idSubPendapatan: idSubPendapatan ? Number(idSubPendapatan) : undefined,
+            idSubHunian: idSubHunian ? Number(idSubHunian) : undefined,
+            idSubPekerjaan: idSubPekerjaan ? Number(idSubPekerjaan) : undefined,
+            idSubTanggungan: idSubTanggungan ? Number(idSubTanggungan) : undefined,
         };
         // 8. Auto-Calculate Profile Matching (Mapping & Perhitungan)
         // - Memetakan survey ke rating sub_kriteria dan membuat Penilaian baru
@@ -148,6 +152,10 @@ export async function inputSurveyAndCalculate(req, res) {
                 persentaseJaminan,
                 skorProfileMatching: hasilSPK.skorAkhir,
                 tingkatRisiko: hasilSPK.tingkatRisiko,
+                idSubPendapatan: idSubPendapatan ? Number(idSubPendapatan) : null,
+                idSubHunian: idSubHunian ? Number(idSubHunian) : null,
+                idSubPekerjaan: idSubPekerjaan ? Number(idSubPekerjaan) : null,
+                idSubTanggungan: idSubTanggungan ? Number(idSubTanggungan) : null,
             },
             create: {
                 idPengajuan,
@@ -161,6 +169,10 @@ export async function inputSurveyAndCalculate(req, res) {
                 persentaseJaminan,
                 skorProfileMatching: hasilSPK.skorAkhir,
                 tingkatRisiko: hasilSPK.tingkatRisiko,
+                idSubPendapatan: idSubPendapatan ? Number(idSubPendapatan) : null,
+                idSubHunian: idSubHunian ? Number(idSubHunian) : null,
+                idSubPekerjaan: idSubPekerjaan ? Number(idSubPekerjaan) : null,
+                idSubTanggungan: idSubTanggungan ? Number(idSubTanggungan) : null,
             },
         });
         res.status(200).json({

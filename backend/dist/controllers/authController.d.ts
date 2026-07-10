@@ -21,4 +21,12 @@ export declare function loginDebitur(req: Request, res: Response): Promise<void>
  * Mengambil daftar seluruh kreditur aktif (untuk pilihan di form registrasi/pengajuan)
  */
 export declare function getPublicKrediturList(req: any, res: Response): Promise<void>;
+/**
+ * Mengambil detail satu kreditur berdasarkan ID (untuk mengambil batas limit & tenor)
+ */
+export declare function getPublicKrediturDetails(req: any, res: Response): Promise<void>;
+/**
+ * Mengambil statistik agregat publik (untuk counter di landing page)
+ */
+export declare function getPublicStats(req: any, res: Response): Promise<void>;
 //# sourceMappingURL=authController.d.ts.map

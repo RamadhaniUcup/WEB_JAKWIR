@@ -2,24 +2,25 @@ import { type FC } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useSubmitSurvey } from "../../hooks/useApi.js";
+import { useSubmitSurvey, useGetKriterias } from "../../hooks/useApi.js";
 import { GlassCard } from "../common/glasscard.js";
 
-// 1. Definisikan Skema Validasi Form Survey Lapangan menggunakan Zod (tipe z.number)
-const surveySchema = z.object({
-  totalAset: z.number().min(1, "Total aset harus lebih besar dari 0"),
-  pendapatanBersih: z.number().min(1, "Pendapatan bersih harus lebih besar dari 0"),
-  statusHunian: z.enum(["MILIK_SENDIRI", "SEWA", "KONTRAK", "BERSAMA_ORANG_TUA"], {
-    message: "Pilih status hunian yang sesuai",
-  }),
-  statusPekerjaan: z.enum(["KARYAWAN_TETAP", "KARYAWAN_KONTRAK", "WIRAUSAHA", "TIDAK_BEKERJA"], {
-    message: "Pilih status pekerjaan yang sesuai",
-  }),
-  jumlahTanggungan: z.number().int().min(0, "Jumlah tanggungan minimal 0"),
-  nilaiJaminanAset: z.number().min(1, "Nilai jaminan harus lebih besar dari 0"),
-});
+// 1. Definisikan Skema Validasi Zod dengan Validasi Silang (Jaminan <= Aset)
+const surveySchema = z
+  .object({
+    totalAset: z.number().min(1, "Total aset harus lebih besar dari 0"),
+    pendapatanBersih: z.number().min(1, "Pendapatan bersih harus lebih besar dari 0"),
+    nilaiJaminanAset: z.number().min(1, "Nilai jaminan harus lebih besar dari 0"),
+    idSubPendapatan: z.number({ message: "Pilih kategori pendapatan" }),
+    idSubHunian: z.number({ message: "Pilih kategori status hunian" }),
+    idSubPekerjaan: z.number({ message: "Pilih kategori status pekerjaan" }),
+    idSubTanggungan: z.number({ message: "Pilih kategori jumlah tanggungan" }),
+  })
+  .refine((data) => data.nilaiJaminanAset <= data.totalAset, {
+    message: "Nilai jaminan aset tidak boleh melebihi total aset",
+    path: ["nilaiJaminanAset"],
+  });
 
-// Infer tipe data dari skema Zod
 type SurveyFormData = z.infer<typeof surveySchema>;
 
 interface FormSurveyProps {
@@ -29,6 +30,14 @@ interface FormSurveyProps {
 
 export const FormSurvey: FC<FormSurveyProps> = ({ idPengajuan, onSuccessCallback }) => {
   const submitSurveyMutation = useSubmitSurvey();
+  
+  // Ambil list kriteria & sub-kriteria dinamis milik kreditur admin yang sedang login
+  const { data: kriterias, isLoading: isKriteriaLoading } = useGetKriterias();
+
+  const kriteriaPendapatan = kriterias?.find((k) => k.kodeKriteria === "C1" || k.namaKriteria.toUpperCase().includes("PENDAPATAN"));
+  const kriteriaHunian = kriterias?.find((k) => k.kodeKriteria === "C4" || k.namaKriteria.toUpperCase().includes("HUNIAN"));
+  const kriteriaPekerjaan = kriterias?.find((k) => k.kodeKriteria === "C5" || k.namaKriteria.toUpperCase().includes("PEKERJAAN"));
+  const kriteriaTanggungan = kriterias?.find((k) => k.kodeKriteria === "C6" || k.namaKriteria.toUpperCase().includes("TANGGUNGAN"));
 
   const {
     register,
@@ -37,21 +46,52 @@ export const FormSurvey: FC<FormSurveyProps> = ({ idPengajuan, onSuccessCallback
     formState: { errors },
   } = useForm<SurveyFormData>({
     resolver: zodResolver(surveySchema),
-    defaultValues: {
-      totalAset: 0,
-      pendapatanBersih: 0,
-      statusHunian: "MILIK_SENDIRI",
-      statusPekerjaan: "KARYAWAN_TETAP",
-      jumlahTanggungan: 0,
-      nilaiJaminanAset: 0,
-    },
   });
 
   const onSubmit = (data: SurveyFormData) => {
+    // 1. Map idSubHunian ke enum StatusHunian
+    let statusHunian: "MILIK_SENDIRI" | "SEWA" | "KONTRAK" | "BERSAMA_ORANG_TUA" = "MILIK_SENDIRI";
+    const chosenHunianSub = kriteriaHunian?.subKriteria?.find((s: any) => s.idSub === data.idSubHunian);
+    if (chosenHunianSub) {
+      const desc = chosenHunianSub.deskripsi.toUpperCase();
+      if (desc.includes("SEWA")) statusHunian = "SEWA";
+      else if (desc.includes("KONTRAK")) statusHunian = "KONTRAK";
+      else if (desc.includes("ORANG_TUA") || desc.includes("BERSAMA")) statusHunian = "BERSAMA_ORANG_TUA";
+    }
+
+    // 2. Map idSubPekerjaan ke enum StatusPekerjaan
+    let statusPekerjaan: "KARYAWAN_TETAP" | "KARYAWAN_KONTRAK" | "WIRAUSAHA" | "TIDAK_BEKERJA" = "KARYAWAN_TETAP";
+    const chosenPekSub = kriteriaPekerjaan?.subKriteria?.find((s: any) => s.idSub === data.idSubPekerjaan);
+    if (chosenPekSub) {
+      const desc = chosenPekSub.deskripsi.toUpperCase();
+      if (desc.includes("KONTRAK")) statusPekerjaan = "KARYAWAN_KONTRAK";
+      else if (desc.includes("WIRA") || desc.includes("USAHA")) statusPekerjaan = "WIRAUSAHA";
+      else if (desc.includes("TIDAK")) statusPekerjaan = "TIDAK_BEKERJA";
+    }
+
+    // 3. Map idSubTanggungan ke nilai integer
+    let jumlahTanggungan = 0;
+    const chosenTangSub = kriteriaTanggungan?.subKriteria?.find((s: any) => s.idSub === data.idSubTanggungan);
+    if (chosenTangSub) {
+      const numMatch = chosenTangSub.deskripsi.match(/\d+/);
+      if (numMatch) {
+        jumlahTanggungan = parseInt(numMatch[0], 10);
+      }
+    }
+
     submitSurveyMutation.mutate(
       {
         idPengajuan,
-        ...data,
+        totalAset: data.totalAset,
+        pendapatanBersih: data.pendapatanBersih,
+        statusHunian,
+        statusPekerjaan,
+        jumlahTanggungan,
+        nilaiJaminanAset: data.nilaiJaminanAset,
+        idSubPendapatan: data.idSubPendapatan,
+        idSubHunian: data.idSubHunian,
+        idSubPekerjaan: data.idSubPekerjaan,
+        idSubTanggungan: data.idSubTanggungan,
       },
       {
         onSuccess: () => {
@@ -68,16 +108,24 @@ export const FormSurvey: FC<FormSurveyProps> = ({ idPengajuan, onSuccessCallback
     );
   };
 
+  if (isKriteriaLoading) {
+    return (
+      <div className="py-6 text-center text-slate-400 text-xs font-semibold">
+        Memuat opsi kriteria SPK...
+      </div>
+    );
+  }
+
   return (
     <GlassCard className="p-8 w-full max-w-xl mx-auto" hoverEffect={false}>
       <div className="mb-6">
         <h3 className="text-xl font-bold text-white">Input Hasil Survey Lapangan</h3>
-        <p className="text-xs text-slate-400 mt-1">Isi data lapangan untuk memicu perhitungan otomatis Profile Matching.</p>
+        <p className="text-xs text-slate-400 mt-1">Pilih data survey & sub-kriteria pembanding untuk hitung Profile Matching.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         
-        {/* Row 1: Aset & Pendapatan */}
+        {/* Row 1: Aset & Jaminan (Validasi Silang) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Total Aset (Rp)</label>
@@ -91,62 +139,6 @@ export const FormSurvey: FC<FormSurveyProps> = ({ idPengajuan, onSuccessCallback
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Pendapatan Bersih (Rp/Bulan)</label>
-            <input
-              type="number"
-              {...register("pendapatanBersih", { valueAsNumber: true })}
-              className="w-full px-4 py-3 bg-white/3 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-sm transition"
-              placeholder="Contoh: 12000000"
-            />
-            {errors.pendapatanBersih && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.pendapatanBersih.message}</p>}
-          </div>
-        </div>
-
-        {/* Row 2: Status Hunian & Pekerjaan */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Status Hunian</label>
-            <select
-              {...register("statusHunian")}
-              className="w-full px-4 py-3 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition cursor-pointer"
-            >
-              <option value="MILIK_SENDIRI">Milik Sendiri</option>
-              <option value="SEWA">Sewa</option>
-              <option value="KONTRAK">Kontrak</option>
-              <option value="BERSAMA_ORANG_TUA">Bersama Orang Tua</option>
-            </select>
-            {errors.statusHunian && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.statusHunian.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Status Pekerjaan</label>
-            <select
-              {...register("statusPekerjaan")}
-              className="w-full px-4 py-3 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition cursor-pointer"
-            >
-              <option value="KARYAWAN_TETAP">Karyawan Tetap</option>
-              <option value="KARYAWAN_KONTRAK">Karyawan Kontrak</option>
-              <option value="WIRAUSAHA">Wirausaha</option>
-              <option value="TIDAK_BEKERJA">Tidak Bekerja</option>
-            </select>
-            {errors.statusPekerjaan && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.statusPekerjaan.message}</p>}
-          </div>
-        </div>
-
-        {/* Row 3: Tanggungan & Jaminan */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Jumlah Tanggungan</label>
-            <input
-              type="number"
-              {...register("jumlahTanggungan", { valueAsNumber: true })}
-              className="w-full px-4 py-3 bg-white/3 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-sm transition"
-              placeholder="Contoh: 3"
-            />
-            {errors.jumlahTanggungan && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.jumlahTanggungan.message}</p>}
-          </div>
-
-          <div>
             <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Nilai Jaminan Aset (Rp)</label>
             <input
               type="number"
@@ -156,6 +148,88 @@ export const FormSurvey: FC<FormSurveyProps> = ({ idPengajuan, onSuccessCallback
             />
             {errors.nilaiJaminanAset && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.nilaiJaminanAset.message}</p>}
           </div>
+        </div>
+
+        {/* Row 2: Pendapatan Mentah & Dropdown Pilihan Opsi */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Pendapatan Bersih (Rp/Bulan)</label>
+            <input
+              type="number"
+              {...register("pendapatanBersih", { valueAsNumber: true })}
+              className="w-full px-4 py-3 bg-white/3 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-sm transition"
+              placeholder="Contoh: 12000000"
+            />
+            {errors.pendapatanBersih && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.pendapatanBersih.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Kategori Pendapatan SPK</label>
+            <select
+              {...register("idSubPendapatan", { valueAsNumber: true })}
+              className="w-full px-4 py-3 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition cursor-pointer"
+            >
+              <option value="">-- Pilih Opsi --</option>
+              {kriteriaPendapatan?.subKriteria?.map((sub: any) => (
+                <option key={sub.idSub} value={sub.idSub}>
+                  {sub.deskripsi}
+                </option>
+              ))}
+            </select>
+            {errors.idSubPendapatan && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.idSubPendapatan.message}</p>}
+          </div>
+        </div>
+
+        {/* Row 3: Status Hunian & Status Pekerjaan Dropdowns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Opsi Status Hunian SPK</label>
+            <select
+              {...register("idSubHunian", { valueAsNumber: true })}
+              className="w-full px-4 py-3 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition cursor-pointer"
+            >
+              <option value="">-- Pilih Opsi --</option>
+              {kriteriaHunian?.subKriteria?.map((sub: any) => (
+                <option key={sub.idSub} value={sub.idSub}>
+                  {sub.deskripsi}
+                </option>
+              ))}
+            </select>
+            {errors.idSubHunian && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.idSubHunian.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Opsi Pekerjaan SPK</label>
+            <select
+              {...register("idSubPekerjaan", { valueAsNumber: true })}
+              className="w-full px-4 py-3 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition cursor-pointer"
+            >
+              <option value="">-- Pilih Opsi --</option>
+              {kriteriaPekerjaan?.subKriteria?.map((sub: any) => (
+                <option key={sub.idSub} value={sub.idSub}>
+                  {sub.deskripsi}
+                </option>
+              ))}
+            </select>
+            {errors.idSubPekerjaan && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.idSubPekerjaan.message}</p>}
+          </div>
+        </div>
+
+        {/* Row 4: Jumlah Tanggungan */}
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Opsi Jumlah Tanggungan SPK</label>
+          <select
+            {...register("idSubTanggungan", { valueAsNumber: true })}
+            className="w-full px-4 py-3 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition cursor-pointer"
+          >
+            <option value="">-- Pilih Opsi --</option>
+            {kriteriaTanggungan?.subKriteria?.map((sub: any) => (
+              <option key={sub.idSub} value={sub.idSub}>
+                {sub.deskripsi}
+              </option>
+            ))}
+          </select>
+          {errors.idSubTanggungan && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.idSubTanggungan.message}</p>}
         </div>
 
         <button
@@ -176,3 +250,4 @@ export const FormSurvey: FC<FormSurveyProps> = ({ idPengajuan, onSuccessCallback
     </GlassCard>
   );
 };
+export default FormSurvey;
