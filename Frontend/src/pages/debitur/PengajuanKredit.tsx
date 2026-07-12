@@ -23,7 +23,7 @@ export const PengajuanKredit: FC = () => {
   const maxLimit = detailKreditur ? Number(detailKreditur.limitPengajuan) : 10000000;
   const maxTenor = detailKreditur ? Number(detailKreditur.limitTenor) : 12;
 
-  // Sesuaikan nilai nominal jika melebihi batas limit kreditur terpilih
+  // Sesuaikan nilai nominal jika melebihi batas limit ketika kreditur terpilih berubah
   useEffect(() => {
     if (detailKreditur) {
       const limit = Number(detailKreditur.limitPengajuan);
@@ -35,7 +35,7 @@ export const PengajuanKredit: FC = () => {
         setTenor(String(tenorInt));
       }
     }
-  }, [detailKreditur, nominal, tenor]);
+  }, [detailKreditur]);
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -50,6 +50,16 @@ export const PengajuanKredit: FC = () => {
 
     if (!idKreditur) {
       alert("Harap pilih lembaga kreditur terlebih dahulu!");
+      return;
+    }
+
+    if (nominal < 1000000) {
+      alert("Nominal pinjaman minimal Rp 1.000.000!");
+      return;
+    }
+
+    if (nominal > maxLimit) {
+      alert(`Nominal pinjaman melebihi batas limit kreditur (${formatRupiah(maxLimit)})!`);
       return;
     }
 
@@ -117,7 +127,7 @@ export const PengajuanKredit: FC = () => {
             </div>
           )}
 
-          {/* Nominal Kredit via Slider/Range Input */}
+          {/* Nominal Kredit via Input Angka Manual */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">Nominal Pinjaman Diajukan</label>
@@ -125,20 +135,20 @@ export const PengajuanKredit: FC = () => {
             </div>
             
             <input 
-              type="range" 
+              type="number" 
               min={1000000}
               max={maxLimit}
-              step={500000}
-              value={nominal}
+              value={nominal || ""}
               onChange={(e) => setNominal(Number(e.target.value))}
               disabled={!idKreditur}
-              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed" 
+              className="w-full px-4 py-3 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold" 
+              placeholder="Contoh: 15000000"
               required 
             />
             
-            <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-semibold">
-              <span>{formatRupiah(1000000)}</span>
-              <span>Maks: {formatRupiah(maxLimit)}</span>
+            <div className="flex justify-between text-[10px] text-slate-500 mt-2 font-semibold">
+              <span>Minimal: {formatRupiah(1000000)}</span>
+              <span>Maksimal: {formatRupiah(maxLimit)}</span>
             </div>
           </div>
 

@@ -34,10 +34,10 @@ export const FormSurvey: FC<FormSurveyProps> = ({ idPengajuan, onSuccessCallback
   // Ambil list kriteria & sub-kriteria dinamis milik kreditur admin yang sedang login
   const { data: kriterias, isLoading: isKriteriaLoading } = useGetKriterias();
 
-  const kriteriaPendapatan = kriterias?.find((k) => k.kodeKriteria === "C1" || k.namaKriteria.toUpperCase().includes("PENDAPATAN"));
+  const kriteriaPendapatan = kriterias?.find((k) => k.kodeKriteria === "C3" || k.namaKriteria.toUpperCase().includes("PENDAPATAN"));
   const kriteriaHunian = kriterias?.find((k) => k.kodeKriteria === "C4" || k.namaKriteria.toUpperCase().includes("HUNIAN"));
-  const kriteriaPekerjaan = kriterias?.find((k) => k.kodeKriteria === "C5" || k.namaKriteria.toUpperCase().includes("PEKERJAAN"));
-  const kriteriaTanggungan = kriterias?.find((k) => k.kodeKriteria === "C6" || k.namaKriteria.toUpperCase().includes("TANGGUNGAN"));
+  const kriteriaPekerjaan = kriterias?.find((k) => k.kodeKriteria === "C6" || k.namaKriteria.toUpperCase().includes("PEKERJAAN"));
+  const kriteriaTanggungan = kriterias?.find((k) => k.kodeKriteria === "C1" || k.namaKriteria.toUpperCase().includes("TANGGUNGAN"));
 
   const {
     register,

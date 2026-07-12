@@ -261,7 +261,7 @@ export const DataPengajuan: FC = () => {
       {/* DETAIL MODAL OVERLAY */}
       {selectedPengajuan && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <GlassCard className="w-full max-w-3xl p-8 relative max-h-[90vh] overflow-y-auto" hoverEffect={false}>
+          <GlassCard className="w-full max-w-5xl p-8 relative max-h-[90vh] overflow-y-auto" hoverEffect={false}>
             {/* Header Modal */}
             <div className="flex justify-between items-start border-b border-white/10 pb-4 mb-6">
               <div>
