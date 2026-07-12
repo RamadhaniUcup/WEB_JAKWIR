@@ -7,7 +7,7 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-export const KrediturDashboardLayout: FC<LayoutProps> = ({ children }) => {
+export const PenyediaJasaDashboardLayout: FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
 
@@ -18,10 +18,11 @@ export const KrediturDashboardLayout: FC<LayoutProps> = ({ children }) => {
   // Ambil list pengajuan untuk menampilkan jumlah antrean baru secara dinamis
   const { data: pengajuanList } = useGetPengajuan();
   const pendingCount = pengajuanList?.filter((p) => p.statusPeminjaman === "DIPROSES").length || 0;
+  const spkPendingCount = pengajuanList?.filter((p) => p.statusPeminjaman === "MENUNGGU_SPK").length || 0;
 
   const handleLogout = () => {
     logout();
-    window.location.href = "/kreditur/login";
+    window.location.href = "/penyedia-jasa/login";
   };
 
   return (
@@ -39,13 +40,13 @@ export const KrediturDashboardLayout: FC<LayoutProps> = ({ children }) => {
         <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">Menu Utama</div>
           
-          <Link to="/kreditur/dashboard" 
-            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/kreditur/dashboard") ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+          <Link to="/penyedia-jasa/dashboard" 
+            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/penyedia-jasa/dashboard") ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
             <span className="text-sm font-semibold">Dashboard Utama</span>
           </Link>
           
-          <Link to="/kreditur/pengajuan" 
-            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/kreditur/pengajuan") ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+          <Link to="/penyedia-jasa/pengajuan" 
+            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/penyedia-jasa/pengajuan") ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
             <span className="text-sm font-semibold flex-1">Data Pengajuan</span>
             {pendingCount > 0 && (
               <span className="bg-amber-500 text-slate-950 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -54,16 +55,21 @@ export const KrediturDashboardLayout: FC<LayoutProps> = ({ children }) => {
             )}
           </Link>
 
-          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider pt-6 mb-2 px-2">Pengaturan</div>
-
-          <Link to="/kreditur/settings/spk" 
-            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/kreditur/settings/spk") ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
-            <span className="text-sm font-semibold">Pengaturan SPK</span>
+          <Link to="/penyedia-jasa/kalkulasi" 
+            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/penyedia-jasa/kalkulasi") ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+            <span className="text-sm font-semibold flex-1">Kalkulasi SPK</span>
+            {spkPendingCount > 0 && (
+              <span className="bg-cyan-500 text-slate-950 text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                {spkPendingCount} Antrean
+              </span>
+            )}
           </Link>
 
-          <Link to="/kreditur/settings/instansi" 
-            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/kreditur/settings/instansi") ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
-            <span className="text-sm font-semibold">Batas Kredit Instansi</span>
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider pt-6 mb-2 px-2">Pengaturan</div>
+
+          <Link to="/penyedia-jasa/settings/profil" 
+            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/penyedia-jasa/settings/profil") ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+            <span className="text-sm font-semibold">Profil & Batas Kredit</span>
           </Link>
         </nav>
 
@@ -82,12 +88,12 @@ export const KrediturDashboardLayout: FC<LayoutProps> = ({ children }) => {
         {/* Header Dashboard */}
         <header className="h-20 backdrop-blur-md bg-slate-900/30 border-b border-white/10 flex items-center justify-between px-8 z-10">
           <div>
-            <h2 className="text-lg font-bold text-white">{user?.kreditur || "Lembaga Pembiayaan"}</h2>
+            <h2 className="text-lg font-bold text-white">{user?.penyediaJasa || "Penyedia Jasa Pembiayaan"}</h2>
             <p className="text-xs text-slate-400">Mitra ID: #MITRA-{user?.id || "N/A"}</p>
           </div>
           <div className="flex items-center space-x-4">
             <button className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white relative">
-              {pendingCount > 0 && <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full"></span>}
+              {(pendingCount + spkPendingCount) > 0 && <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full"></span>}
               🔔
             </button>
             <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center border-2 border-indigo-400 overflow-hidden">
@@ -107,4 +113,4 @@ export const KrediturDashboardLayout: FC<LayoutProps> = ({ children }) => {
     </div>
   );
 };
-export default KrediturDashboardLayout;
+export default PenyediaJasaDashboardLayout;

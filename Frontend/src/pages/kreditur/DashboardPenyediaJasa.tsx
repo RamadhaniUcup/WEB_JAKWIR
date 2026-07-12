@@ -6,11 +6,11 @@ import { GlassCard } from "../../components/common/glasscard.js";
 interface LivePengajuan {
   idPengajuan: number;
   tanggalPengajuan: string;
-  statusPeminjaman: "DIPROSES" | "DITERIMA" | "DITOLAK";
+  statusPeminjaman: "DIPROSES" | "DITERIMA" | "DITOLAK" | "MENUNGGU_SPK";
   jumlahKredit: string;
   lamaTenor: number;
-  debitur: {
-    namaDebitur: string;
+  nasabah: {
+    namaNasabah: string;
     email: string;
     telepon: string;
     nik: string;
@@ -22,7 +22,7 @@ interface LivePengajuan {
   } | null;
 }
 
-export const DashboardKreditur: FC = () => {
+export const DashboardPenyediaJasa: FC = () => {
   const { data: pengajuanList, isLoading } = useGetPengajuan();
 
   // Helper formatting nominal Rupiah
@@ -39,7 +39,7 @@ export const DashboardKreditur: FC = () => {
   const pendingCount = pengajuanList?.filter((p) => p.statusPeminjaman === "DIPROSES").length || 0;
   const approvedList = pengajuanList?.filter((p) => p.statusPeminjaman === "DITERIMA") || [];
   const totalDanaDisalurkan = approvedList.reduce((acc, curr) => acc + Number(curr.jumlahKredit), 0);
-  const activeDebiturCount = new Set(pengajuanList?.map((p) => p.debitur?.idDebitur)).size;
+  const activeNasabahCount = new Set(pengajuanList?.map((p) => p.nasabah?.idNasabah)).size;
 
   // Batasi daftar antrean terbaru maksimal 5 data
   const latestQueue = pengajuanList?.slice(0, 5) || [];
@@ -65,9 +65,9 @@ export const DashboardKreditur: FC = () => {
 
         <GlassCard className="p-6 relative overflow-hidden" hoverEffect={false}>
           <div className="relative z-10">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Pengajuan Menunggu</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Pengajuan Baru</p>
             <p className="text-2xl font-extrabold text-amber-400">{pendingCount} Berkas</p>
-            <p className="text-xs text-slate-500 mt-2 font-semibold">Butuh survei & input data lapangan</p>
+            <p className="text-xs text-slate-500 mt-2 font-semibold">Butuh survei & opsi sub-kriteria</p>
           </div>
           <div className="absolute -top-4 -right-4 w-16 h-16 bg-amber-500/10 rounded-full blur-xl pointer-events-none"></div>
         </GlassCard>
@@ -79,8 +79,8 @@ export const DashboardKreditur: FC = () => {
         </GlassCard>
 
         <GlassCard className="p-6" hoverEffect={false}>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Total Debitur Aktif</p>
-          <p className="text-2xl font-extrabold text-white">{activeDebiturCount} Orang</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Total Nasabah Aktif</p>
+          <p className="text-2xl font-extrabold text-white">{activeNasabahCount} Orang</p>
           <p className="text-xs text-slate-500 mt-2 font-semibold">Terdaftar di sistem aggregator</p>
         </GlassCard>
       </div>
@@ -90,7 +90,7 @@ export const DashboardKreditur: FC = () => {
         <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/[0.01]">
           <h3 className="text-lg font-bold text-white">Antrean Pengajuan Terbaru</h3>
           <Link 
-            to="/kreditur/pengajuan" 
+            to="/penyedia-jasa/pengajuan" 
             className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-4 py-2 rounded-xl hover:bg-indigo-500/20 transition-colors decoration-none"
           >
             Lihat Semua ({totalPengajuan})
@@ -112,7 +112,7 @@ export const DashboardKreditur: FC = () => {
               <thead className="bg-white/[0.02] text-xs uppercase text-slate-500 font-semibold tracking-wider border-b border-white/10">
                 <tr>
                   <th className="px-6 py-4 whitespace-nowrap">ID Req</th>
-                  <th className="px-6 py-4 whitespace-nowrap">Calon Debitur</th>
+                  <th className="px-6 py-4 whitespace-nowrap">Nama Nasabah</th>
                   <th className="px-6 py-4 whitespace-nowrap">Nominal & Tenor</th>
                   <th className="px-6 py-4 whitespace-nowrap">Skor SPK / Risiko</th>
                   <th className="px-6 py-4 whitespace-nowrap">Status</th>
@@ -123,13 +123,13 @@ export const DashboardKreditur: FC = () => {
                 {latestQueue.map((row: LivePengajuan, index: number) => (
                   <tr key={index} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-6 py-4 font-mono text-xs text-slate-400 whitespace-nowrap">REQ-{row.idPengajuan}</td>
-                    <td className="px-6 py-4 font-bold text-white whitespace-nowrap">{row.debitur.namaDebitur}</td>
+                    <td className="px-6 py-4 font-bold text-white whitespace-nowrap">{row.nasabah?.namaNasabah}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-bold text-emerald-400">{formatRupiah(row.jumlahKredit)}</div>
                       <div className="text-[10px] text-slate-500 mt-0.5">{row.lamaTenor} Bulan</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {row.survey ? (
+                      {row.survey && row.survey.skorProfileMatching ? (
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded">
                             {row.survey.skorProfileMatching}
@@ -143,15 +143,19 @@ export const DashboardKreditur: FC = () => {
                           </span>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-500">Belum disurvei</span>
+                        <span className="text-xs text-slate-500">
+                          {row.statusPeminjaman === "MENUNGGU_SPK" ? "Menunggu SPK" : "Belum disurvei"}
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`flex items-center text-xs font-bold ${
                         row.statusPeminjaman === "DIPROSES" ? "text-amber-400" :
+                        row.statusPeminjaman === "MENUNGGU_SPK" ? "text-cyan-400" :
                         row.statusPeminjaman === "DITERIMA" ? "text-emerald-400" : "text-red-400"
                       }`}>
                         {row.statusPeminjaman === "DIPROSES" && <span className="w-2 h-2 rounded-full bg-amber-400 mr-2 animate-pulse"></span>}
+                        {row.statusPeminjaman === "MENUNGGU_SPK" && <span className="w-2 h-2 rounded-full bg-cyan-400 mr-2 animate-pulse"></span>}
                         {row.statusPeminjaman === "DITERIMA" && <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2"></span>}
                         {row.statusPeminjaman === "DITOLAK" && <span className="w-2 h-2 rounded-full bg-red-400 mr-2"></span>}
                         {row.statusPeminjaman}
@@ -159,7 +163,7 @@ export const DashboardKreditur: FC = () => {
                     </td>
                     <td className="px-6 py-4 text-center whitespace-nowrap">
                       <Link 
-                        to="/kreditur/pengajuan" 
+                        to="/penyedia-jasa/pengajuan" 
                         className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-slate-300 hover:bg-indigo-600 hover:border-indigo-500 hover:text-white transition-colors decoration-none inline-block cursor-pointer"
                       >
                         Tinjau
@@ -176,3 +180,4 @@ export const DashboardKreditur: FC = () => {
     </div>
   );
 };
+export default DashboardPenyediaJasa;

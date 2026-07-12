@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useLoginMutation } from "../../hooks/useApi.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
-export const LoginKreditur: FC = () => {
+export const LoginPenyediaJasa: FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -23,7 +23,7 @@ export const LoginKreditur: FC = () => {
           if (userRole === "SUPER ADMIN") {
             navigate("/super-admin/dashboard");
           } else {
-            navigate("/kreditur/dashboard");
+            navigate("/penyedia-jasa/dashboard");
           }
         },
         onError: (err: any) => {
@@ -42,9 +42,9 @@ export const LoginKreditur: FC = () => {
       <GlassCard className="w-full max-w-md p-8 relative z-10" hoverEffect={false}>
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-linear-to-tr from-cyan-500 to-indigo-500 shadow-lg shadow-cyan-500/20 mb-3">
-            <span className="text-slate-950 font-extrabold text-xl">K</span>
+            <span className="text-slate-950 font-extrabold text-xl">P</span>
           </div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight">Portal Mitra Kreditur</h2>
+          <h2 className="text-2xl font-extrabold text-white tracking-tight">Portal Penyedia Jasa</h2>
           <p className="text-xs text-slate-400 mt-2">Masuk ke dashboard lembaga pembiayaan Anda</p>
         </div>
 
@@ -97,13 +97,13 @@ export const LoginKreditur: FC = () => {
         <div className="mt-8 pt-6 border-t border-white/5 text-center text-xs space-y-3">
           <p className="text-slate-500">
             Ingin bermitra dengan JAKWIR?{" "}
-            <Link to="/kreditur/landing" className="text-cyan-400 hover:underline font-bold">
+            <Link to="/penyedia-jasa/landing" className="text-cyan-400 hover:underline font-bold">
               Hubungi Kami
             </Link>
           </p>
           <p>
-            <Link to="/debitur/login" className="text-slate-400 hover:text-white transition font-medium">
-              Masuk sebagai Debitur (Nasabah) →
+            <Link to="/nasabah/login" className="text-slate-400 hover:text-white transition font-medium">
+              Masuk sebagai Nasabah →
             </Link>
           </p>
         </div>
@@ -111,3 +111,4 @@ export const LoginKreditur: FC = () => {
     </div>
   );
 };
+export default LoginPenyediaJasa;

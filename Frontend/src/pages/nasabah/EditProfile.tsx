@@ -1,5 +1,5 @@
 import { useState, useEffect, type FC, type FormEvent } from "react";
-import { useGetDebiturProfile, useUpdateDebiturProfile } from "../../hooks/useApi.js";
+import { useGetNasabahProfile, useUpdateNasabahProfile } from "../../hooks/useApi.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
 export const EditProfile: FC = () => {
@@ -8,14 +8,14 @@ export const EditProfile: FC = () => {
   const [nik, setNik] = useState("");
   const [alamat, setAlamat] = useState("");
 
-  // Ambil profil debitur
-  const { data: profile, isLoading } = useGetDebiturProfile();
-  const updateProfileMutation = useUpdateDebiturProfile();
+  // Ambil profil nasabah
+  const { data: profile, isLoading } = useGetNasabahProfile();
+  const updateProfileMutation = useUpdateNasabahProfile();
 
   // Sinkronisasi data saat profil termuat
   useEffect(() => {
     if (profile) {
-      setName(profile.namaDebitur || "");
+      setName(profile.namaNasabah || "");
       setPhone(profile.telepon || "");
       setNik(profile.nik || "");
       setAlamat(profile.alamat || "");
@@ -27,7 +27,7 @@ export const EditProfile: FC = () => {
 
     updateProfileMutation.mutate(
       {
-        namaDebitur: name,
+        namaNasabah: name,
         telepon: phone,
         nik,
         alamat,
@@ -155,3 +155,4 @@ export const EditProfile: FC = () => {
     </div>
   );
 };
+export default EditProfile;

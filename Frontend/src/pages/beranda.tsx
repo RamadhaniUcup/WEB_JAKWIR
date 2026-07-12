@@ -1,12 +1,12 @@
 import { useState, type FC } from "react";
 import { Link } from "react-router-dom";
 import { GlassCard } from "../components/common/glasscard.js";
-import { useGetPublicStats, useGetKrediturList } from "../hooks/useApi.js";
+import { useGetPublicStats, useGetPenyediaJasaList } from "../hooks/useApi.js";
 
 export const Beranda: FC = () => {
   // Fetch data dari database
   const { data: stats } = useGetPublicStats();
-  const { data: liveKrediturList } = useGetKrediturList();
+  const { data: livePenyediaJasaList } = useGetPenyediaJasaList();
 
   // 1. Inisialisasi State untuk Slider Kalkulator
   const [loanAmount, setLoanAmount] = useState<number>(25000000);
@@ -27,8 +27,8 @@ export const Beranda: FC = () => {
   const monthlyInterest = loanAmount * baseInterestRate;
   const estInstallment = Math.round(monthlyPrincipal + monthlyInterest);
 
-  // Mock data untuk 6 Kreditur Terpopuler
-  const mockKreditur = [
+  // Mock data untuk 6 Penyedia Jasa Terpopuler
+  const mockPenyediaJasa = [
     {
       nama: "Bank Mandiri Utama",
       tipe: "Perbankan",
@@ -79,13 +79,13 @@ export const Beranda: FC = () => {
     },
   ];
 
-  const displayList = liveKrediturList && liveKrediturList.length > 0 
-    ? liveKrediturList.slice(0, 6).map((k: any, idx: number) => {
+  const displayList = livePenyediaJasaList && livePenyediaJasaList.length > 0 
+    ? livePenyediaJasaList.slice(0, 6).map((k: any, idx: number) => {
         const tipeOptions = ["Perbankan", "Fintech P2P", "Syariah"];
         const bungaOptions = ["0.55% / bln", "0.75% / bln", "0.95% / bln"];
         const ratingOptions = ["4.9", "4.8", "4.7"];
         return {
-          nama: k.namaPerusahaan,
+          nama: k.namaPenyediaJasa,
           tipe: tipeOptions[idx % tipeOptions.length],
           limitMax: formatRupiah(Number(k.limitPengajuan || 100000000)),
           bunga: bungaOptions[idx % bungaOptions.length],
@@ -93,7 +93,7 @@ export const Beranda: FC = () => {
           terpopuler: idx < 2
         };
       })
-    : mockKreditur;
+    : mockPenyediaJasa;
 
   return (
     <div className="w-full text-slate-200 bg-[#0f172a] relative overflow-hidden">
@@ -118,7 +118,7 @@ export const Beranda: FC = () => {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
               Kendali Penuh di Tangan Anda, <br />
               <span className="bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-                Bebas Pilih Kreditur.
+                Bebas Pilih Penyedia Jasa.
               </span>
             </h1>
             
@@ -130,7 +130,7 @@ export const Beranda: FC = () => {
             
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
               <Link
-                to="/debitur/login"
+                to="/nasabah/penyedia-jasa"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 text-slate-950 font-extrabold text-base hover:opacity-90 hover:shadow-xl hover:shadow-indigo-500/20 transition-all text-center"
               >
                 Ajukan Sekarang →
@@ -208,10 +208,10 @@ export const Beranda: FC = () => {
                 </div>
 
                 <Link
-                  to="/debitur/login"
+                  to="/nasabah/penyedia-jasa"
                   className="w-full block text-center py-4 rounded-2xl bg-white text-slate-950 font-extrabold text-sm hover:bg-slate-200 transition-colors shadow-lg cursor-pointer decoration-none"
                 >
-                  Cari Kreditur Sesuai Limit
+                  Cari Penyedia Jasa Sesuai Limit
                 </Link>
               </div>
             </GlassCard>
@@ -242,20 +242,20 @@ export const Beranda: FC = () => {
 
             <div className="space-y-1 border-y md:border-y-0 md:border-x border-white/10 py-6 md:py-0">
               <p className="text-4xl font-extrabold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-                {stats && stats.totalKreditur > 0 
-                  ? `${stats.totalKreditur} Mitra` 
+                {stats && stats.totalPenyediaJasa > 0 
+                  ? `${stats.totalPenyediaJasa} Mitra` 
                   : "45+ Mitra"}
               </p>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Kreditur Terdaftar</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Penyedia Jasa Terdaftar</p>
             </div>
 
             <div className="space-y-1">
               <p className="text-4xl font-extrabold bg-gradient-to-r from-emerald-400 to-indigo-400 bg-clip-text text-transparent">
-                {stats && stats.totalDebitur > 0 
-                  ? `${new Intl.NumberFormat("id-ID").format(stats.totalDebitur)}+` 
+                {stats && stats.totalNasabah > 0 
+                  ? `${new Intl.NumberFormat("id-ID").format(stats.totalNasabah)}+` 
                   : "15.000+"}
               </p>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Debitur Aktif</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Nasabah Aktif</p>
             </div>
 
           </div>
@@ -285,7 +285,7 @@ export const Beranda: FC = () => {
             <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-lg">
               🏦
             </div>
-            <h3 className="text-base font-bold text-white">Bebas Pilih Kreditur</h3>
+            <h3 className="text-base font-bold text-white">Bebas Pilih Penyedia Jasa</h3>
             <p className="text-xs text-slate-400 leading-relaxed">Pilih lembaga keuangan perbankan, syariah, atau koperasi terbaik secara mandiri sesuai profil risiko Anda.</p>
           </GlassCard>
 
@@ -309,12 +309,12 @@ export const Beranda: FC = () => {
       </section>
 
       {/* =========================================================
-          3. SEKSI 6 KREDITUR TERPOPULER (Top Lenders)
+          3. SEKSI 6 PENYEDIA JASA TERPOPULER (Top Lenders)
           ========================================================= */}
       <section className="py-20 bg-slate-900/10 border-t border-white/5 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold text-white tracking-tight">Mitra Lembaga Kreditur Terpopuler</h2>
+            <h2 className="text-3xl font-extrabold text-white tracking-tight">Mitra Penyedia Jasa Terpopuler</h2>
             <p className="text-sm text-slate-400 mt-2 max-w-xl mx-auto">Lihat daftar lembaga pembiayaan terfavorit pilihan nasabah aggregator bulan ini.</p>
           </div>
 
@@ -354,7 +354,7 @@ export const Beranda: FC = () => {
                     </div>
                   )}
                   <Link
-                    to="/debitur/login"
+                    to="/nasabah/penyedia-jasa"
                     className="w-full block py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white text-center hover:bg-white/10 transition decoration-none"
                   >
                     Ajukan Limit Pembiayaan
@@ -366,10 +366,10 @@ export const Beranda: FC = () => {
 
           <div className="text-center mt-12">
             <Link
-              to="/debitur/kreditur"
+              to="/nasabah/penyedia-jasa"
               className="inline-flex items-center justify-center px-8 py-3.5 bg-linear-to-r from-indigo-500 to-cyan-500 text-slate-950 font-bold rounded-xl shadow-lg hover:opacity-90 transition cursor-pointer decoration-none text-sm"
             >
-              Lihat Semua Kreditur →
+              Lihat Semua Penyedia Jasa →
             </Link>
           </div>
         </div>
@@ -394,7 +394,7 @@ export const Beranda: FC = () => {
               </div>
               <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-4">Langkah 01</span>
               <h3 className="text-base font-bold text-white mb-2">Lengkapi Biodata</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">Buat akun nasabah (Debitur) dan masukkan e-KYC NIK KTP serta data profil keuangan Anda.</p>
+              <p className="text-xs text-slate-400 leading-relaxed">Buat akun nasabah dan masukkan e-KYC NIK KTP serta data profil keuangan Anda.</p>
             </div>
           </GlassCard>
 
@@ -406,7 +406,7 @@ export const Beranda: FC = () => {
               </div>
               <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-4">Langkah 02</span>
               <h3 className="text-base font-bold text-white mb-2">Pilih Mitra Lembaga</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">Bandingkan bunga, jangka tenor cicilan, dan ajukan berkas pinjaman Anda ke satu lembaga pembiayaan.</p>
+              <p className="text-xs text-slate-400 leading-relaxed">Bandingkan bunga, jangka tenor cicilan, dan ajukan berkas pinjaman Anda ke satu Penyedia Jasa.</p>
             </div>
           </GlassCard>
 
@@ -418,7 +418,7 @@ export const Beranda: FC = () => {
               </div>
               <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-4">Langkah 03</span>
               <h3 className="text-base font-bold text-white mb-2">Survei Lapangan</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">Tim analis mitra kreditur melakukan verifikasi lapangan, menginput parameter survei ke sistem SPK.</p>
+              <p className="text-xs text-slate-400 leading-relaxed">Tim analis mitra Penyedia Jasa melakukan verifikasi lapangan, menginput pilihan kriteria hasil survei ke sistem SPK.</p>
             </div>
           </GlassCard>
 
@@ -467,7 +467,7 @@ export const Beranda: FC = () => {
           </div>
 
           <p className="text-[11px] text-slate-500 leading-relaxed max-w-xl mx-auto pt-2 border-t border-white/5">
-            JAKWIR menjamin keamanan data pribadi Anda dengan standar enkripsi AES-256 tingkat perbankan. Seluruh mitra lembaga kreditur kami memiliki izin usaha perbankan/pinjaman berlisensi dari otoritas regulator Indonesia.
+            JAKWIR menjamin keamanan data pribadi Anda dengan standar enkripsi AES-256 tingkat perbankan. Seluruh mitra lembaga Penyedia Jasa kami memiliki izin usaha perbankan/pinjaman berlisensi dari otoritas regulator Indonesia.
           </p>
         </GlassCard>
       </section>
@@ -475,5 +475,4 @@ export const Beranda: FC = () => {
     </div>
   );
 };
-
 export default Beranda;

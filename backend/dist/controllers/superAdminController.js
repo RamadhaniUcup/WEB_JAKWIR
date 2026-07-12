@@ -1,55 +1,55 @@
 import { prisma } from "../db.js";
 import { hashPassword, encrypt, decrypt } from "../utils/security.js";
 // ==========================================
-// 1. CRUD DATA KREDITUR
+// 1. CRUD DATA PENYEDIA JASA
 // ==========================================
-export async function getKrediturs(req, res) {
+export async function getPenyediaJasas(req, res) {
     try {
-        const list = await prisma.kreditur.findMany({
-            orderBy: { idKreditur: "desc" },
+        const list = await prisma.penyediaJasa.findMany({
+            orderBy: { idPenyediaJasa: "desc" },
         });
         res.status(200).json({ data: list });
     }
     catch (error) {
-        console.error("SuperAdmin: Error get krediturs:", error);
-        res.status(500).json({ message: "Gagal mengambil data kreditur." });
+        console.error("SuperAdmin: Error get penyedia jasas:", error);
+        res.status(500).json({ message: "Gagal mengambil data penyedia jasa." });
     }
 }
-export async function createKreditur(req, res) {
+export async function createPenyediaJasa(req, res) {
     try {
-        const { namaPerusahaan, alamat, statusAktif, limitPengajuan, limitTenor } = req.body;
-        if (!namaPerusahaan || !alamat) {
-            res.status(400).json({ message: "Nama perusahaan dan alamat wajib diisi." });
+        const { namaPenyediaJasa, alamat, statusAktif, limitPengajuan, limitTenor } = req.body;
+        if (!namaPenyediaJasa || !alamat) {
+            res.status(400).json({ message: "Nama penyedia jasa dan alamat wajib diisi." });
             return;
         }
-        const newKreditur = await prisma.kreditur.create({
+        const newPj = await prisma.penyediaJasa.create({
             data: {
-                namaPerusahaan,
+                namaPenyediaJasa,
                 alamat,
                 statusAktif: statusAktif || "AKTIF",
                 limitPengajuan: limitPengajuan !== undefined ? Number(limitPengajuan) : 0,
                 limitTenor: limitTenor !== undefined ? Number(limitTenor) : 12,
             },
         });
-        res.status(201).json({ message: "Kreditur berhasil dibuat.", data: newKreditur });
+        res.status(201).json({ message: "Penyedia jasa berhasil dibuat.", data: newPj });
     }
     catch (error) {
-        console.error("SuperAdmin: Error create kreditur:", error);
-        res.status(500).json({ message: "Gagal membuat data kreditur." });
+        console.error("SuperAdmin: Error create penyedia jasa:", error);
+        res.status(500).json({ message: "Gagal membuat data penyedia jasa." });
     }
 }
-export async function updateKreditur(req, res) {
+export async function updatePenyediaJasa(req, res) {
     try {
-        const idKreditur = Number(req.params.id);
-        const { namaPerusahaan, alamat, statusAktif, limitPengajuan, limitTenor } = req.body;
-        const exists = await prisma.kreditur.findUnique({ where: { idKreditur } });
+        const idPenyediaJasa = Number(req.params.id);
+        const { namaPenyediaJasa, alamat, statusAktif, limitPengajuan, limitTenor } = req.body;
+        const exists = await prisma.penyediaJasa.findUnique({ where: { idPenyediaJasa } });
         if (!exists) {
-            res.status(404).json({ message: "Kreditur tidak ditemukan." });
+            res.status(404).json({ message: "Penyedia jasa tidak ditemukan." });
             return;
         }
         const dataUpdate = {};
-        if (namaPerusahaan !== undefined)
-            dataUpdate.namaPerusahaan = namaPerusahaan;
+        if (namaPenyediaJasa !== undefined)
+            dataUpdate.namaPenyediaJasa = namaPenyediaJasa;
         if (alamat !== undefined)
             dataUpdate.alamat = alamat;
         if (statusAktif !== undefined)
@@ -58,40 +58,40 @@ export async function updateKreditur(req, res) {
             dataUpdate.limitPengajuan = Number(limitPengajuan);
         if (limitTenor !== undefined)
             dataUpdate.limitTenor = Number(limitTenor);
-        const updated = await prisma.kreditur.update({
-            where: { idKreditur },
+        const updated = await prisma.penyediaJasa.update({
+            where: { idPenyediaJasa },
             data: dataUpdate,
         });
-        res.status(200).json({ message: "Kreditur berhasil diperbarui.", data: updated });
+        res.status(200).json({ message: "Penyedia jasa berhasil diperbarui.", data: updated });
     }
     catch (error) {
-        console.error("SuperAdmin: Error update kreditur:", error);
-        res.status(500).json({ message: "Gagal memperbarui data kreditur." });
+        console.error("SuperAdmin: Error update penyedia jasa:", error);
+        res.status(500).json({ message: "Gagal memperbarui data penyedia jasa." });
     }
 }
-export async function deleteKreditur(req, res) {
+export async function deletePenyediaJasa(req, res) {
     try {
-        const idKreditur = Number(req.params.id);
-        const exists = await prisma.kreditur.findUnique({ where: { idKreditur } });
+        const idPenyediaJasa = Number(req.params.id);
+        const exists = await prisma.penyediaJasa.findUnique({ where: { idPenyediaJasa } });
         if (!exists) {
-            res.status(404).json({ message: "Kreditur tidak ditemukan." });
+            res.status(404).json({ message: "Penyedia jasa tidak ditemukan." });
             return;
         }
-        await prisma.kreditur.delete({ where: { idKreditur } });
-        res.status(200).json({ message: "Kreditur berhasil dihapus." });
+        await prisma.penyediaJasa.delete({ where: { idPenyediaJasa } });
+        res.status(200).json({ message: "Penyedia jasa berhasil dihapus." });
     }
     catch (error) {
-        console.error("SuperAdmin: Error delete kreditur:", error);
-        res.status(500).json({ message: "Gagal menghapus data kreditur." });
+        console.error("SuperAdmin: Error delete penyedia jasa:", error);
+        res.status(500).json({ message: "Gagal menghapus data penyedia jasa." });
     }
 }
 // ==========================================
-// 2. CRUD DATA USER ADMIN KREDITUR
+// 2. CRUD DATA USER ADMIN PENYEDIA JASA
 // ==========================================
 export async function getUsers(req, res) {
     try {
         const list = await prisma.users.findMany({
-            include: { kreditur: true },
+            include: { penyediaJasa: true },
             orderBy: { idUser: "desc" },
         });
         res.status(200).json({ data: list });
@@ -103,7 +103,7 @@ export async function getUsers(req, res) {
 }
 export async function createUser(req, res) {
     try {
-        const { username, password, email, role, idKreditur } = req.body;
+        const { username, password, email, role, idPenyediaJasa } = req.body;
         if (!username || !password || !email || !role) {
             res.status(400).json({ message: "Data pendaftaran user tidak lengkap." });
             return;
@@ -120,7 +120,7 @@ export async function createUser(req, res) {
                 email,
                 password: hashedPassword,
                 role: role,
-                idKreditur: idKreditur ? Number(idKreditur) : null,
+                idPenyediaJasa: idPenyediaJasa ? Number(idPenyediaJasa) : null,
             },
         });
         res.status(201).json({ message: "User admin berhasil dibuat.", data: newUser });
@@ -133,7 +133,7 @@ export async function createUser(req, res) {
 export async function updateUser(req, res) {
     try {
         const idUser = Number(req.params.id);
-        const { username, password, email, role, idKreditur } = req.body;
+        const { username, password, email, role, idPenyediaJasa } = req.body;
         const exists = await prisma.users.findUnique({ where: { idUser } });
         if (!exists) {
             res.status(404).json({ message: "User tidak ditemukan." });
@@ -146,8 +146,8 @@ export async function updateUser(req, res) {
             dataUpdate.email = email;
         if (role !== undefined)
             dataUpdate.role = role;
-        if (idKreditur !== undefined)
-            dataUpdate.idKreditur = idKreditur ? Number(idKreditur) : null;
+        if (idPenyediaJasa !== undefined)
+            dataUpdate.idPenyediaJasa = idPenyediaJasa ? Number(idPenyediaJasa) : null;
         if (password) {
             dataUpdate.password = await hashPassword(password);
         }
@@ -179,17 +179,17 @@ export async function deleteUser(req, res) {
     }
 }
 // ==========================================
-// 3. CRUD DATA DEBITUR
+// 3. CRUD DATA NASABAH
 // ==========================================
-export async function getDebiturs(req, res) {
+export async function getNasabahs(req, res) {
     try {
-        const list = await prisma.debitur.findMany({
-            orderBy: { idDebitur: "desc" },
+        const list = await prisma.nasabah.findMany({
+            orderBy: { idNasabah: "desc" },
         });
         // Dekripsi data sensitif (NIK & Alamat)
         const formatted = list.map((d) => ({
-            idDebitur: d.idDebitur,
-            namaDebitur: d.namaDebitur,
+            idNasabah: d.idNasabah,
+            namaNasabah: d.namaNasabah,
             email: d.email,
             telepon: d.telepon,
             nik: decrypt(d.nik),
@@ -198,28 +198,28 @@ export async function getDebiturs(req, res) {
         res.status(200).json({ data: formatted });
     }
     catch (error) {
-        console.error("SuperAdmin: Error get debiturs:", error);
-        res.status(500).json({ message: "Gagal mengambil data debitur." });
+        console.error("SuperAdmin: Error get nasabahs:", error);
+        res.status(500).json({ message: "Gagal mengambil data nasabah." });
     }
 }
-export async function createDebitur(req, res) {
+export async function createNasabah(req, res) {
     try {
-        const { namaDebitur, email, telepon, nik, alamat, password } = req.body;
-        if (!namaDebitur || !email || !telepon || !nik || !alamat || !password) {
-            res.status(400).json({ message: "Data registrasi debitur tidak lengkap." });
+        const { namaNasabah, email, telepon, nik, alamat, password } = req.body;
+        if (!namaNasabah || !email || !telepon || !nik || !alamat || !password) {
+            res.status(400).json({ message: "Data registrasi nasabah tidak lengkap." });
             return;
         }
-        const exists = await prisma.debitur.findUnique({ where: { email } });
+        const exists = await prisma.nasabah.findUnique({ where: { email } });
         if (exists) {
-            res.status(400).json({ message: "Email debitur sudah terdaftar." });
+            res.status(400).json({ message: "Email nasabah sudah terdaftar." });
             return;
         }
         const hashedPassword = await hashPassword(password);
         const encryptedNik = encrypt(nik);
         const encryptedAlamat = encrypt(alamat);
-        const newDebitur = await prisma.debitur.create({
+        const newNasabah = await prisma.nasabah.create({
             data: {
-                namaDebitur,
+                namaNasabah,
                 email,
                 telepon,
                 nik: encryptedNik,
@@ -228,32 +228,32 @@ export async function createDebitur(req, res) {
             },
         });
         res.status(201).json({
-            message: "Debitur berhasil dibuat.",
+            message: "Nasabah berhasil dibuat.",
             data: {
-                idDebitur: newDebitur.idDebitur,
-                namaDebitur: newDebitur.namaDebitur,
-                email: newDebitur.email,
-                telepon: newDebitur.telepon,
+                idNasabah: newNasabah.idNasabah,
+                namaNasabah: newNasabah.namaNasabah,
+                email: newNasabah.email,
+                telepon: newNasabah.telepon,
             },
         });
     }
     catch (error) {
-        console.error("SuperAdmin: Error create debitur:", error);
-        res.status(500).json({ message: "Gagal membuat data debitur." });
+        console.error("SuperAdmin: Error create nasabah:", error);
+        res.status(500).json({ message: "Gagal membuat data nasabah." });
     }
 }
-export async function updateDebitur(req, res) {
+export async function updateNasabah(req, res) {
     try {
-        const idDebitur = Number(req.params.id);
-        const { namaDebitur, email, telepon, nik, alamat, password } = req.body;
-        const exists = await prisma.debitur.findUnique({ where: { idDebitur } });
+        const idNasabah = Number(req.params.id);
+        const { namaNasabah, email, telepon, nik, alamat, password } = req.body;
+        const exists = await prisma.nasabah.findUnique({ where: { idNasabah } });
         if (!exists) {
-            res.status(404).json({ message: "Debitur tidak ditemukan." });
+            res.status(404).json({ message: "Nasabah tidak ditemukan." });
             return;
         }
         const dataUpdate = {};
-        if (namaDebitur !== undefined)
-            dataUpdate.namaDebitur = namaDebitur;
+        if (namaNasabah !== undefined)
+            dataUpdate.namaNasabah = namaNasabah;
         if (email !== undefined)
             dataUpdate.email = email;
         if (telepon !== undefined)
@@ -265,38 +265,38 @@ export async function updateDebitur(req, res) {
         if (password) {
             dataUpdate.password = await hashPassword(password);
         }
-        const updated = await prisma.debitur.update({
-            where: { idDebitur },
+        const updated = await prisma.nasabah.update({
+            where: { idNasabah },
             data: dataUpdate,
         });
         res.status(200).json({
-            message: "Debitur berhasil diperbarui.",
+            message: "Nasabah berhasil diperbarui.",
             data: {
-                idDebitur: updated.idDebitur,
-                namaDebitur: updated.namaDebitur,
+                idNasabah: updated.idNasabah,
+                namaNasabah: updated.namaNasabah,
                 email: updated.email,
             },
         });
     }
     catch (error) {
-        console.error("SuperAdmin: Error update debitur:", error);
-        res.status(500).json({ message: "Gagal memperbarui data debitur." });
+        console.error("SuperAdmin: Error update nasabah:", error);
+        res.status(500).json({ message: "Gagal memperbarui data nasabah." });
     }
 }
-export async function deleteDebitur(req, res) {
+export async function deleteNasabah(req, res) {
     try {
-        const idDebitur = Number(req.params.id);
-        const exists = await prisma.debitur.findUnique({ where: { idDebitur } });
+        const idNasabah = Number(req.params.id);
+        const exists = await prisma.nasabah.findUnique({ where: { idNasabah } });
         if (!exists) {
-            res.status(404).json({ message: "Debitur tidak ditemukan." });
+            res.status(404).json({ message: "Nasabah tidak ditemukan." });
             return;
         }
-        await prisma.debitur.delete({ where: { idDebitur } });
-        res.status(200).json({ message: "Debitur berhasil dihapus." });
+        await prisma.nasabah.delete({ where: { idNasabah } });
+        res.status(200).json({ message: "Nasabah berhasil dihapus." });
     }
     catch (error) {
-        console.error("SuperAdmin: Error delete debitur:", error);
-        res.status(500).json({ message: "Gagal menghapus data debitur." });
+        console.error("SuperAdmin: Error delete nasabah:", error);
+        res.status(500).json({ message: "Gagal menghapus data nasabah." });
     }
 }
 //# sourceMappingURL=superAdminController.js.map

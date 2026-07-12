@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { 
   loginUser, 
-  loginDebitur, 
-  registerDebitur, 
+  loginNasabah, 
+  registerNasabah, 
   registerUser,
-  getPublicKrediturList,
-  getPublicKrediturDetails,
+  getPublicPenyediaJasaList,
+  getPublicPenyediaJasaDetails,
   getPublicStats
 } from "../controllers/authController.js";
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddleware.js";
@@ -14,17 +14,17 @@ const router = Router();
 
 // Endpoint Login Publik
 router.post("/login/admin", loginUser);
-router.post("/login/debitur", loginDebitur);
+router.post("/login/nasabah", loginNasabah);
 
-// Endpoint Daftar Kreditur Publik (Untuk drop-down pilihan di frontend)
-router.get("/kreditur/public", getPublicKrediturList);
-router.get("/kreditur/public/:id", getPublicKrediturDetails);
+// Endpoint Daftar Penyedia Jasa Publik
+router.get("/penyedia-jasa/public", getPublicPenyediaJasaList);
+router.get("/penyedia-jasa/public/:id", getPublicPenyediaJasaDetails);
 router.get("/stats/public", getPublicStats);
 
-// Endpoint Registrasi Debitur (Nasabah melakukan registrasi mandiri)
-router.post("/register/debitur", registerDebitur);
+// Endpoint Registrasi Nasabah
+router.post("/register/nasabah", registerNasabah);
 
-// Endpoint Registrasi Admin Baru (Hanya dapat diakses oleh SUPER ADMIN yang terautentikasi)
+// Endpoint Registrasi Admin Baru (Super Admin only)
 router.post(
   "/register/admin", 
   verifyToken, 

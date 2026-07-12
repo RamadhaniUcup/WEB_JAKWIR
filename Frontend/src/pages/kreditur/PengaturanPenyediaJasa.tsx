@@ -1,38 +1,52 @@
 import { useState, useEffect, type FC, type FormEvent } from "react";
-import { useGetMyKrediturProfile, useUpdateMyKrediturProfile } from "../../hooks/useApi.js";
+import { useGetMyPenyediaJasaProfile, useUpdateMyPenyediaJasaProfile } from "../../hooks/useApi.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
-export const PengaturanInstansi: FC = () => {
-  const [namaPerusahaan, setNamaPerusahaan] = useState("");
+export const PengaturanPenyediaJasa: FC = () => {
+  const [namaPenyediaJasa, setNamaPenyediaJasa] = useState("");
   const [alamat, setAlamat] = useState("");
   const [limitPengajuan, setLimitPengajuan] = useState("");
   const [limitTenor, setLimitTenor] = useState("");
+  const [persentaseCf, setPersentaseCf] = useState("60");
+  const [persentaseSf, setPersentaseSf] = useState("40");
 
-  const { data: profile, isLoading } = useGetMyKrediturProfile();
-  const updateMutation = useUpdateMyKrediturProfile();
+  const { data: profile, isLoading } = useGetMyPenyediaJasaProfile();
+  const updateMutation = useUpdateMyPenyediaJasaProfile();
 
   useEffect(() => {
     if (profile) {
-      setNamaPerusahaan(profile.namaPerusahaan || "");
+      setNamaPenyediaJasa(profile.namaPenyediaJasa || "");
       setAlamat(profile.alamat || "");
       setLimitPengajuan(String(profile.limitPengajuan || 0));
       setLimitTenor(String(profile.limitTenor || 12));
+      setPersentaseCf(String(profile.persentaseCf || 60));
+      setPersentaseSf(String(profile.persentaseSf || 40));
     }
   }, [profile]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
+    const cfVal = Number(persentaseCf);
+    const sfVal = Number(persentaseSf);
+
+    if (cfVal + sfVal !== 100) {
+      alert("Total persentase Core Factor & Secondary Factor harus berjumlah 100%.");
+      return;
+    }
+
     updateMutation.mutate(
       {
-        namaPerusahaan,
+        namaPenyediaJasa,
         alamat,
         limitPengajuan: Number(limitPengajuan),
         limitTenor: Number(limitTenor),
+        persentaseCf: cfVal,
+        persentaseSf: sfVal,
       },
       {
         onSuccess: () => {
-          alert("Profil instansi dan limit kredit berhasil diperbarui!");
+          alert("Profil instansi dan pengaturan SPK berhasil diperbarui!");
         },
         onError: (err: any) => {
           alert(`Gagal menyimpan konfigurasi: ${err?.response?.data?.message || err.message}`);
@@ -60,11 +74,11 @@ export const PengaturanInstansi: FC = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Nama Perusahaan Pembiayaan</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Nama Penyedia Jasa Pembiayaan</label>
             <input 
               type="text" 
-              value={namaPerusahaan}
-              onChange={(e) => setNamaPerusahaan(e.target.value)}
+              value={namaPenyediaJasa}
+              onChange={(e) => setNamaPenyediaJasa(e.target.value)}
               className="w-full px-4 py-3 bg-white/3 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition"
               required
             />
@@ -109,6 +123,45 @@ export const PengaturanInstansi: FC = () => {
             </div>
           </div>
 
+          {/* Bobot CF / SF Global */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 border-t border-white/5">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Bobot Core Factor (CF %)</label>
+              <input 
+                type="number" 
+                value={persentaseCf}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setPersentaseCf(String(val));
+                  setPersentaseSf(String(100 - val));
+                }}
+                min={0}
+                max={100}
+                className="w-full px-4 py-3 bg-white/3 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition"
+                required
+              />
+              <p className="text-[10px] text-slate-500 mt-1">Bobot kriteria utama CORE.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Bobot Secondary Factor (SF %)</label>
+              <input 
+                type="number" 
+                value={persentaseSf}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setPersentaseSf(String(val));
+                  setPersentaseCf(String(100 - val));
+                }}
+                min={0}
+                max={100}
+                className="w-full px-4 py-3 bg-white/3 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition"
+                required
+              />
+              <p className="text-[10px] text-slate-500 mt-1">Bobot kriteria pendukung SECONDARY.</p>
+            </div>
+          </div>
+
           <div className="pt-4">
             <button
               type="submit"
@@ -131,4 +184,4 @@ export const PengaturanInstansi: FC = () => {
     </div>
   );
 };
-export default PengaturanInstansi;
+export default PengaturanPenyediaJasa;

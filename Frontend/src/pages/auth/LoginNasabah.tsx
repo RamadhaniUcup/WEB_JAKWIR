@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useLoginMutation } from "../../hooks/useApi.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
-export const LoginDebitur: FC = () => {
+export const LoginNasabah: FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -19,7 +19,7 @@ export const LoginDebitur: FC = () => {
       { email, password, isAdmin: false },
       {
         onSuccess: () => {
-          navigate("/debitur/history");
+          navigate("/nasabah/history");
         },
         onError: (err: any) => {
           setErrorMsg(err?.response?.data?.message || "Login gagal. Silakan periksa kredensial Anda.");
@@ -39,7 +39,7 @@ export const LoginDebitur: FC = () => {
           <Link to="/" className="text-sm font-semibold text-slate-400 hover:text-white transition flex items-center justify-center gap-2 mb-3">
             ← Kembali ke Beranda
           </Link>
-          <h2 className="text-3xl font-extrabold text-white tracking-tight">Masuk Debitur</h2>
+          <h2 className="text-3xl font-extrabold text-white tracking-tight">Masuk Nasabah</h2>
           <p className="text-xs text-slate-400 mt-2">Kelola pengajuan dan pantau keputusan kelayakan kredit Anda</p>
         </div>
 
@@ -91,7 +91,7 @@ export const LoginDebitur: FC = () => {
         <div className="mt-6 pt-4 border-t border-white/5 text-center text-xs font-semibold">
           <p className="text-slate-500">
             Belum memiliki akun nasabah?{" "}
-            <Link to="/debitur/register" className="text-indigo-400 hover:underline font-bold">
+            <Link to="/nasabah/register" className="text-indigo-400 hover:underline font-bold">
               Daftar di sini
             </Link>
           </p>
@@ -100,3 +100,4 @@ export const LoginDebitur: FC = () => {
     </div>
   );
 };
+export default LoginNasabah;

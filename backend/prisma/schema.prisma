@@ -24,25 +24,12 @@ enum StatusPeminjaman {
   DITERIMA
   DITOLAK
   DIPROSES
+  MENUNGGU_SPK
 }
 
 enum Role {
   SUPER_ADMIN @map("SUPER ADMIN")
   ADMIN
-}
-
-enum StatusHunian {
-  MILIK_SENDIRI
-  SEWA
-  KONTRAK
-  BERSAMA_ORANG_TUA
-}
-
-enum StatusPekerjaan {
-  KARYAWAN_TETAP
-  KARYAWAN_KONTRAK
-  WIRAUSAHA
-  TIDAK_BEKERJA
 }
 
 enum TingkatRisiko {
@@ -51,47 +38,37 @@ enum TingkatRisiko {
   TINGGI
 }
 
-model Kreditur {
-  idKreditur     Int         @id @default(autoincrement()) @map("id_kreditur")
-  namaPerusahaan String      @map("nama_perusahaan") @db.VarChar(50)
-  alamat         String      @db.VarChar(255)
-  statusAktif    StatusAktif @default(AKTIF) @map("status_aktif")
+model PenyediaJasa {
+  idPenyediaJasa    Int         @id @default(autoincrement()) @map("id_penyedia_jasa")
+  namaPenyediaJasa  String      @map("nama_penyedia_jasa") @db.VarChar(50)
+  alamat            String      @db.VarChar(255)
+  statusAktif       StatusAktif @default(AKTIF) @map("status_aktif")
   
-  // Kolom batasan pengajuan dari Kreditur
-  limitPengajuan Decimal     @default(0) @map("limit_pengajuan") @db.Decimal(15, 2)
-  limitTenor     Int         @default(12) @map("limit_tenor")
+  // Kolom batasan pengajuan dari Penyedia Jasa
+  limitPengajuan    Decimal     @default(0) @map("limit_pengajuan") @db.Decimal(15, 2)
+  limitTenor        Int         @default(12) @map("limit_tenor")
 
-  aspek     Aspek[]
+  // Bobot persentase CF & SF global untuk Penyedia Jasa
+  persentaseCf      Decimal     @default(60.00) @map("persentase_cf") @db.Decimal(5, 2)
+  persentaseSf      Decimal     @default(40.00) @map("persentase_sf") @db.Decimal(5, 2)
+
+  kriteria  Kriteria[]
   pengajuan Pengajuan[]
   users     Users[]
 
-  @@map("kreditur")
-}
-
-model Aspek {
-  idAspek      Int      @id @default(autoincrement()) @map("id_aspek")
-  idKreditur   Int      @map("id_kreditur")
-  namaAspek    String   @map("nama_aspek") @db.VarChar(50)
-  persentaseCf Decimal  @map("persentase_cf") @db.Decimal(5, 2)
-  persentaseSf Decimal  @map("persentase_sf") @db.Decimal(5, 2)
-  bobotAspek   Decimal  @map("bobot_aspek") @db.Decimal(5, 2)
-
-  kreditur Kreditur @relation(fields: [idKreditur], references: [idKreditur], onDelete: Cascade, onUpdate: Cascade)
-  kriteria Kriteria[]
-
-  @@map("aspek")
+  @@map("penyedia_jasa")
 }
 
 model Kriteria {
-  idKriteria   Int         @id @default(autoincrement()) @map("id_kriteria")
-  idAspek      Int         @map("id_aspek")
-  kodeKriteria String      @map("kode_kriteria") @db.Char(5)
-  namaKriteria String      @map("nama_kriteria") @db.VarChar(100)
-  nilaiTarget  Int         @map("nilai_target")
-  jenisFaktor  JenisFaktor @map("jenis_faktor")
+  idKriteria     Int         @id @default(autoincrement()) @map("id_kriteria")
+  idPenyediaJasa Int         @map("id_penyedia_jasa")
+  kodeKriteria   String      @map("kode_kriteria") @db.Char(5)
+  namaKriteria   String      @map("nama_kriteria") @db.VarChar(100)
+  nilaiTarget    Int         @map("nilai_target")
+  jenisFaktor    JenisFaktor @map("jenis_faktor")
 
-  aspek        Aspek       @relation(fields: [idAspek], references: [idAspek], onDelete: Cascade, onUpdate: Cascade)
-  subKriteria  SubKriteria[]
+  penyediaJasa   PenyediaJasa @relation(fields: [idPenyediaJasa], references: [idPenyediaJasa], onDelete: Cascade, onUpdate: Cascade)
+  subKriteria    SubKriteria[]
 
   @@map("kriteria")
 }
@@ -105,18 +82,12 @@ model SubKriteria {
   kriteria  Kriteria    @relation(fields: [idKriteria], references: [idKriteria], onDelete: Cascade, onUpdate: Cascade)
   penilaian Penilaian[]
 
-  // Back-references relasi dengan SurveyLapangan
-  surveyPendapatan SurveyLapangan[] @relation("SubPendapatan")
-  surveyHunian     SurveyLapangan[] @relation("SubHunian")
-  surveyPekerjaan  SurveyLapangan[] @relation("SubPekerjaan")
-  surveyTanggungan SurveyLapangan[] @relation("SubTanggungan")
-
   @@map("sub_kriteria")
 }
 
-model Debitur {
-  idDebitur   Int      @id @default(autoincrement()) @map("id_debitur")
-  namaDebitur String   @map("nama_debitur") @db.VarChar(50)
+model Nasabah {
+  idNasabah   Int      @id @default(autoincrement()) @map("id_nasabah")
+  namaNasabah String   @map("nama_nasabah") @db.VarChar(50)
   nik         String   @db.VarChar(255)
   telepon     String   @db.VarChar(20)
   alamat      String   @db.VarChar(255)
@@ -125,23 +96,23 @@ model Debitur {
 
   pengajuan Pengajuan[]
 
-  @@map("debitur")
+  @@map("nasabah")
 }
 
 model Pengajuan {
   idPengajuan      Int              @id @default(autoincrement()) @map("id_pengajuan")
   tanggalPengajuan DateTime         @map("tanggal_pengajuan") @db.Date
   statusPeminjaman StatusPeminjaman @default(DIPROSES) @map("status_peminjaman")
-  idDebitur        Int              @map("id_debitur")
-  idKreditur       Int              @map("id_kreditur")
+  idNasabah        Int              @map("id_nasabah")
+  idPenyediaJasa   Int              @map("id_penyedia_jasa")
   jumlahKredit     Decimal          @map("jumlah_kredit") @db.Decimal(15, 2)
   lamaTenor        Int              @map("lama_tenor")
 
-  debitur   Debitur   @relation(fields: [idDebitur], references: [idDebitur], onDelete: Cascade, onUpdate: Cascade)
-  kreditur  Kreditur  @relation(fields: [idKreditur], references: [idKreditur], onDelete: Cascade, onUpdate: Cascade)
-  penilaian Penilaian[]
+  nasabah      Nasabah      @relation(fields: [idNasabah], references: [idNasabah], onDelete: Cascade, onUpdate: Cascade)
+  penyediaJasa PenyediaJasa @relation(fields: [idPenyediaJasa], references: [idPenyediaJasa], onDelete: Cascade, onUpdate: Cascade)
+  penilaian    Penilaian[]
   
-  survey    SurveyLapangan?
+  survey       SurveyLapangan?
 
   @@map("pengajuan")
 }
@@ -149,30 +120,10 @@ model Pengajuan {
 model SurveyLapangan {
   idSurvey            Int             @id @default(autoincrement()) @map("id_survey")
   idPengajuan         Int             @unique @map("id_pengajuan")
-  totalAset           Decimal         @map("total_aset") @db.Decimal(15, 2)
-  pendapatanBersih    Decimal         @map("pendapatan_bersih") @db.Decimal(15, 2)
-  statusHunian        StatusHunian    @map("status_hunian")
-  statusPekerjaan     StatusPekerjaan @map("status_pekerjaan")
-  jumlahTanggungan    Int             @map("jumlah_tanggungan")
-  nilaiJaminanAset    Decimal         @map("nilai_jaminan_aset") @db.Decimal(15, 2)
-  rasioHutang         Decimal         @map("rasio_hutang") @db.Decimal(5, 2)
-  persentaseJaminan   Decimal         @map("persentase_jaminan") @db.Decimal(5, 2)
-  skorProfileMatching Decimal         @map("skor_profile_matching") @db.Decimal(5, 2)
-  tingkatRisiko       TingkatRisiko   @map("tingkat_risiko")
-
-  // Kolom Foreign Keys relasi terpilih opsi sub-kriteria
-  idSubPendapatan     Int?            @map("id_sub_pendapatan")
-  idSubHunian         Int?            @map("id_sub_hunian")
-  idSubPekerjaan      Int?            @map("id_sub_pekerjaan")
-  idSubTanggungan     Int?            @map("id_sub_tanggungan")
+  skorProfileMatching Decimal?        @map("skor_profile_matching") @db.Decimal(5, 2)
+  tingkatRisiko       TingkatRisiko?  @map("tingkat_risiko")
 
   pengajuan           Pengajuan       @relation(fields: [idPengajuan], references: [idPengajuan], onDelete: Cascade, onUpdate: Cascade)
-  
-  // Relasi pemetaan opsi sub-kriteria dropdown
-  subPendapatan       SubKriteria?    @relation("SubPendapatan", fields: [idSubPendapatan], references: [idSub], onDelete: SetNull, onUpdate: Cascade)
-  subHunian           SubKriteria?    @relation("SubHunian",     fields: [idSubHunian],     references: [idSub], onDelete: SetNull, onUpdate: Cascade)
-  subPekerjaan        SubKriteria?    @relation("SubPekerjaan",  fields: [idSubPekerjaan],  references: [idSub], onDelete: SetNull, onUpdate: Cascade)
-  subTanggungan       SubKriteria?    @relation("SubTanggungan",  fields: [idSubTanggungan],  references: [idSub], onDelete: SetNull, onUpdate: Cascade)
 
   @@map("survey_lapangan")
 }
@@ -198,14 +149,14 @@ model BobotGap {
 }
 
 model Users {
-  idUser     Int      @id @default(autoincrement()) @map("id_user")
-  username   String   @db.VarChar(50)
-  password   String   @db.VarChar(255)
-  email      String   @unique @db.VarChar(50)
-  role       Role
-  idKreditur Int?     @map("id_kreditur")
+  idUser         Int           @id @default(autoincrement()) @map("id_user")
+  username       String        @db.VarChar(50)
+  password       String        @db.VarChar(255)
+  email          String        @unique @db.VarChar(50)
+  role           Role
+  idPenyediaJasa Int?          @map("id_penyedia_jasa")
 
-  kreditur Kreditur? @relation(fields: [idKreditur], references: [idKreditur], onDelete: Cascade, onUpdate: Cascade)
+  penyediaJasa   PenyediaJasa? @relation(fields: [idPenyediaJasa], references: [idPenyediaJasa], onDelete: Cascade, onUpdate: Cascade)
 
   @@map("users")
 }

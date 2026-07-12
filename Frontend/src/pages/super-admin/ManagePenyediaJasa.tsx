@@ -1,30 +1,30 @@
 import { useState, type FC } from "react";
 import {
-  useGetSuperAdminKrediturs,
-  useCreateSuperAdminKreditur,
-  useUpdateSuperAdminKreditur,
-  useDeleteSuperAdminKreditur,
+  useGetSuperAdminPenyediaJasas,
+  useCreateSuperAdminPenyediaJasa,
+  useUpdateSuperAdminPenyediaJasa,
+  useDeleteSuperAdminPenyediaJasa,
 } from "../../hooks/useApi.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
-interface KrediturRow {
-  idKreditur: number;
-  namaPerusahaan: string;
+interface PenyediaJasaRow {
+  idPenyediaJasa: number;
+  namaPenyediaJasa: string;
   alamat: string;
   statusAktif: "AKTIF" | "TIDAK_AKTIF";
   limitPengajuan: string;
   limitTenor: number;
 }
 
-export const ManageKreditur: FC = () => {
-  const { data: list, isLoading } = useGetSuperAdminKrediturs();
-  const createMutation = useCreateSuperAdminKreditur();
-  const updateMutation = useUpdateSuperAdminKreditur();
-  const deleteMutation = useDeleteSuperAdminKreditur();
+export const ManagePenyediaJasa: FC = () => {
+  const { data: list, isLoading } = useGetSuperAdminPenyediaJasas();
+  const createMutation = useCreateSuperAdminPenyediaJasa();
+  const updateMutation = useUpdateSuperAdminPenyediaJasa();
+  const deleteMutation = useDeleteSuperAdminPenyediaJasa();
 
   // Form State
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [namaPerusahaan, setNamaPerusahaan] = useState("");
+  const [namaPenyediaJasa, setNamaPenyediaJasa] = useState("");
   const [alamat, setAlamat] = useState("");
   const [statusAktif, setStatusAktif] = useState<"AKTIF" | "TIDAK_AKTIF">("AKTIF");
   const [limitPengajuan, setLimitPengajuan] = useState(0);
@@ -34,7 +34,7 @@ export const ManageKreditur: FC = () => {
 
   const resetForm = () => {
     setEditingId(null);
-    setNamaPerusahaan("");
+    setNamaPenyediaJasa("");
     setAlamat("");
     setStatusAktif("AKTIF");
     setLimitPengajuan(0);
@@ -42,9 +42,9 @@ export const ManageKreditur: FC = () => {
     setIsOpenForm(false);
   };
 
-  const handleEdit = (k: KrediturRow) => {
-    setEditingId(k.idKreditur);
-    setNamaPerusahaan(k.namaPerusahaan);
+  const handleEdit = (k: PenyediaJasaRow) => {
+    setEditingId(k.idPenyediaJasa);
+    setNamaPenyediaJasa(k.namaPenyediaJasa);
     setAlamat(k.alamat);
     setStatusAktif(k.statusAktif);
     setLimitPengajuan(Number(k.limitPengajuan));
@@ -58,8 +58,8 @@ export const ManageKreditur: FC = () => {
     if (editingId) {
       updateMutation.mutate(
         {
-          idKreditur: editingId,
-          namaPerusahaan,
+          idPenyediaJasa: editingId,
+          namaPenyediaJasa,
           alamat,
           statusAktif,
           limitPengajuan,
@@ -67,7 +67,7 @@ export const ManageKreditur: FC = () => {
         },
         {
           onSuccess: () => {
-            alert("Kreditur berhasil diperbarui!");
+            alert("Penyedia jasa berhasil diperbarui!");
             resetForm();
           },
         }
@@ -75,7 +75,7 @@ export const ManageKreditur: FC = () => {
     } else {
       createMutation.mutate(
         {
-          namaPerusahaan,
+          namaPenyediaJasa,
           alamat,
           statusAktif,
           limitPengajuan,
@@ -83,7 +83,7 @@ export const ManageKreditur: FC = () => {
         },
         {
           onSuccess: () => {
-            alert("Kreditur berhasil didaftarkan!");
+            alert("Penyedia jasa berhasil didaftarkan!");
             resetForm();
           },
         }
@@ -92,10 +92,10 @@ export const ManageKreditur: FC = () => {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("Apakah Anda yakin ingin menghapus lembaga kreditur ini?")) {
+    if (confirm("Apakah Anda yakin ingin menghapus penyedia jasa ini?")) {
       deleteMutation.mutate(id, {
         onSuccess: () => {
-          alert("Kreditur berhasil dihapus.");
+          alert("Penyedia jasa berhasil dihapus.");
         },
       });
     }
@@ -107,7 +107,7 @@ export const ManageKreditur: FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Manajemen Mitra Kreditur</h1>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Manajemen Penyedia Jasa</h1>
           <p className="text-sm text-slate-400 mt-1">Registrasi lembaga pembiayaan baru dan konfigurasikan limit pengajuan kredit.</p>
         </div>
         <button
@@ -134,11 +134,11 @@ export const ManageKreditur: FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Perusahaan/Lembaga</label>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Penyedia Jasa</label>
                 <input
                   type="text"
-                  value={namaPerusahaan}
-                  onChange={(e) => setNamaPerusahaan(e.target.value)}
+                  value={namaPenyediaJasa}
+                  onChange={(e) => setNamaPenyediaJasa(e.target.value)}
                   className="w-full px-4 py-2.5 bg-white/3 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-sm transition"
                   placeholder="Contoh: IndoFund Digital"
                   required
@@ -216,7 +216,7 @@ export const ManageKreditur: FC = () => {
           </div>
         ) : !list || list.length === 0 ? (
           <div className="p-10 text-center text-slate-400 text-sm">
-            Tidak ada lembaga kreditur terdaftar.
+            Tidak ada penyedia jasa terdaftar.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -224,7 +224,7 @@ export const ManageKreditur: FC = () => {
               <thead className="bg-white/[0.02] text-xs uppercase text-slate-500 font-semibold tracking-wider border-b border-white/10">
                 <tr>
                   <th className="px-6 py-4">ID</th>
-                  <th className="px-6 py-4">Mitra Kreditur</th>
+                  <th className="px-6 py-4">Penyedia Jasa</th>
                   <th className="px-6 py-4">Alamat Kantor</th>
                   <th className="px-6 py-4">Batas Limit Pinjaman</th>
                   <th className="px-6 py-4">Maks Tenor</th>
@@ -233,10 +233,10 @@ export const ManageKreditur: FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {list.map((row: KrediturRow) => (
-                  <tr key={row.idKreditur} className="hover:bg-white/[0.01] transition-colors">
-                    <td className="px-6 py-4 font-mono text-xs text-slate-500">#{row.idKreditur}</td>
-                    <td className="px-6 py-4 font-bold text-white">{row.namaPerusahaan}</td>
+                {list.map((row: PenyediaJasaRow) => (
+                  <tr key={row.idPenyediaJasa} className="hover:bg-white/[0.01] transition-colors">
+                    <td className="px-6 py-4 font-mono text-xs text-slate-500">#{row.idPenyediaJasa}</td>
+                    <td className="px-6 py-4 font-bold text-white">{row.namaPenyediaJasa}</td>
                     <td className="px-6 py-4 text-slate-400 text-xs truncate max-w-[12rem]">{row.alamat}</td>
                     <td className="px-6 py-4 font-bold text-emerald-400">
                       {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(Number(row.limitPengajuan))}
@@ -258,7 +258,7 @@ export const ManageKreditur: FC = () => {
                           Ubah
                         </button>
                         <button
-                          onClick={() => handleDelete(row.idKreditur)}
+                          onClick={() => handleDelete(row.idPenyediaJasa)}
                           className="px-2.5 py-1 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-500/20 cursor-pointer"
                         >
                           Hapus
@@ -275,4 +275,4 @@ export const ManageKreditur: FC = () => {
     </div>
   );
 };
-export default ManageKreditur;
+export default ManagePenyediaJasa;

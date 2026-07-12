@@ -16,7 +16,7 @@ export const SuperAdminDashboardLayout: FC<LayoutProps> = ({ children }) => {
 
   const handleLogout = () => {
     logout();
-    window.location.href = "/kreditur/login"; // Redirect ke portal login utama
+    window.location.href = "/penyedia-jasa/login"; // Redirect ke portal login utama
   };
 
   return (
@@ -41,9 +41,14 @@ export const SuperAdminDashboardLayout: FC<LayoutProps> = ({ children }) => {
           
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider pt-6 mb-2 px-2">Manajemen Data</div>
 
-          <Link to="/super-admin/kreditur" 
-            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/super-admin/kreditur") ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
-            <span className="text-sm font-semibold">Data Kreditur</span>
+          <Link to="/super-admin/penyedia-jasa" 
+            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/super-admin/penyedia-jasa") ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+            <span className="text-sm font-semibold">Data Penyedia Jasa</span>
+          </Link>
+
+          <Link to="/super-admin/settings/spk" 
+            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/super-admin/settings/spk") ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+            <span className="text-sm font-semibold">Pengaturan SPK</span>
           </Link>
 
           <Link to="/super-admin/users" 
@@ -51,9 +56,9 @@ export const SuperAdminDashboardLayout: FC<LayoutProps> = ({ children }) => {
             <span className="text-sm font-semibold">Akun Admin Lembaga</span>
           </Link>
 
-          <Link to="/super-admin/debitur" 
-            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/super-admin/debitur") ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
-            <span className="text-sm font-semibold">Data Debitur</span>
+          <Link to="/super-admin/nasabah" 
+            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/super-admin/nasabah") ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+            <span className="text-sm font-semibold">Data Nasabah</span>
           </Link>
         </nav>
 

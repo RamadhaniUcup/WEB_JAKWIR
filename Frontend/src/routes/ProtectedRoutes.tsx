@@ -10,9 +10,9 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({ allowedRoles }) => {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.role);
 
-  // Jika token belum terdaftar, alihkan pengguna ke login Debitur
+  // Jika token belum terdaftar, alihkan pengguna ke login Nasabah
   if (!token) {
-    return <Navigate to="/debitur/login" replace />;
+    return <Navigate to="/nasabah/login" replace />;
   }
 
   // Jika role pengguna tidak diizinkan mengakses halaman ini, alihkan ke beranda utama

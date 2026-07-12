@@ -11,82 +11,24 @@ export interface GapCalculation {
   jenisFaktor: "CORE" | "SECONDARY";
 }
 
-export interface AspectResult {
-  idAspek: number;
-  namaAspek: string;
-  nilaiCF: number;
-  nilaiSF: number;
-  nilaiTotalAspek: number;
-  bobotAspek: number;
-  detailKriteria: GapCalculation[];
-}
-
 export interface ProfileMatchingBreakdown {
   idPengajuan: number;
-  namaDebitur: string;
+  namaNasabah: string;
   tanggalPengajuan: Date;
   jumlahKredit: number;
   lamaTenor: number;
-  breakdownAspek: AspectResult[];
+  nilaiCF: number;
+  nilaiSF: number;
+  persentaseCf: number;
+  persentaseSf: number;
+  detailKriteria: GapCalculation[];
   skorAkhir: number;
   tingkatRisiko: "RENDAH" | "MENENGAH" | "TINGGI";
+  statusPeminjaman: "DITERIMA" | "DITOLAK";
 }
 
 /**
- * Helper untuk mencocokkan nilai survei mentah terhadap deskripsi sub-kriteria secara fleksibel.
- * Mendukung pencocokan string, perbandingan numerik (e.g. ">= 10000000"), dan rentang (e.g. "5000000 - 10000000").
- */
-function matchDescription(val: any, desc: string): boolean {
-  const normalizedDesc = desc.toUpperCase().trim();
-
-  // Pencocokan tipe String (misal Status Hunian, Pekerjaan)
-  if (typeof val === "string") {
-    const normalizedVal = val.toUpperCase().trim();
-    return normalizedDesc.includes(normalizedVal) || normalizedVal.includes(normalizedDesc);
-  }
-
-  // Pencocokan tipe Angka/Nominal (misal Pendapatan, Rasio Hutang, Persentase Jaminan)
-  if (typeof val === "number") {
-    // 1. Cek rentang nilai dengan pemisah "-"
-    if (normalizedDesc.includes("-")) {
-      const parts = normalizedDesc.split("-").map((p) => parseFloat(p.replace(/[^0-9.]/g, "")));
-      const p0 = parts[0];
-      const p1 = parts[1];
-      if (parts.length === 2 && p0 !== undefined && p1 !== undefined && !isNaN(p0) && !isNaN(p1)) {
-        return val >= p0 && val <= p1;
-      }
-    }
-
-    // 2. Cek operator pembanding
-    if (normalizedDesc.startsWith(">=")) {
-      const num = parseFloat(normalizedDesc.replace(">=", "").replace(/[^0-9.]/g, ""));
-      return val >= num;
-    }
-    if (normalizedDesc.startsWith("<=")) {
-      const num = parseFloat(normalizedDesc.replace("<=", "").replace(/[^0-9.]/g, ""));
-      return val <= num;
-    }
-    if (normalizedDesc.startsWith(">")) {
-      const num = parseFloat(normalizedDesc.replace(">", "").replace(/[^0-9.]/g, ""));
-      return val > num;
-    }
-    if (normalizedDesc.startsWith("<")) {
-      const num = parseFloat(normalizedDesc.replace("<", "").replace(/[^0-9.]/g, ""));
-      return val < num;
-    }
-
-    // 3. Pencocokan langsung nilai numerik
-    const directNum = parseFloat(normalizedDesc.replace(/[^0-9.]/g, ""));
-    if (!isNaN(directNum)) {
-      return val === directNum;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Menentukan tingkat risiko berdasarkan skor kelayakan akhir Profile Matching.
+ * Menentukan tingkat risiko berdasarkan skor akhir Profile Matching.
  * - Resiko Rendah: 3.5 - 5.0
  * - Resiko Menengah: 2.0 - 3.49
  * - Resiko Tinggi: < 2.0
@@ -98,24 +40,19 @@ export function determineRisk(score: number): "RENDAH" | "MENENGAH" | "TINGGI" {
 }
 
 /**
- * Service untuk memetakan data survei mentah ke dalam sub-kriteria, menyimpan penilaian, 
- * dan memproses perhitungan Profile Matching secara otomatis.
+ * Menghitung kelayakan kredit dan menyimpan keputusan akhir secara otomatis.
  */
 export async function calculateProfileMatching(idPengajuan: number): Promise<ProfileMatchingBreakdown> {
   const pengajuan = await prisma.pengajuan.findUnique({
     where: { idPengajuan },
     include: {
-      debitur: true,
-      survey: true,
+      nasabah: true,
+      penyediaJasa: true,
       penilaian: {
         include: {
           subKriteria: {
             include: {
-              kriteria: {
-                include: {
-                  aspek: true,
-                },
-              },
+              kriteria: true,
             },
           },
         },
@@ -135,205 +72,83 @@ export async function calculateProfileMatching(idPengajuan: number): Promise<Pro
     return match ? Number(match.bobotNilai) : 1.0;
   };
 
-  const aspekMap = new Map<number, { aspek: any; penilaianList: any[] }>();
+  const detailKriteria: GapCalculation[] = [];
+  const coreWeights: number[] = [];
+  const secondaryWeights: number[] = [];
 
   for (const pen of pengajuan.penilaian) {
     const sub = pen.subKriteria;
     const kriteria = sub.kriteria;
-    const aspek = kriteria.aspek;
 
-    if (!aspekMap.has(aspek.idAspek)) {
-      aspekMap.set(aspek.idAspek, {
-        aspek,
-        penilaianList: [],
-      });
-    }
+    const gap = sub.nilaiRating - kriteria.nilaiTarget;
+    const bobotGap = getBobotNilai(gap);
 
-    aspekMap.get(aspek.idAspek)!.penilaianList.push({
-      kriteria,
-      subKriteria: sub,
-    });
-  }
-
-  const breakdownAspek: AspectResult[] = [];
-  let skorAkhir = 0;
-
-  for (const [idAspek, data] of aspekMap.entries()) {
-    const aspek = data.aspek;
-    const detailKriteria: GapCalculation[] = [];
-    const coreWeights: number[] = [];
-    const secondaryWeights: number[] = [];
-
-    for (const item of data.penilaianList) {
-      const kriteria = item.kriteria;
-      const sub = item.subKriteria;
-
-      const gap = sub.nilaiRating - kriteria.nilaiTarget;
-      const bobotGap = getBobotNilai(gap);
-
-      detailKriteria.push({
-        idKriteria: kriteria.idKriteria,
-        kodeKriteria: kriteria.kodeKriteria,
-        namaKriteria: kriteria.namaKriteria,
-        nilaiRating: sub.nilaiRating,
-        nilaiTarget: kriteria.nilaiTarget,
-        gap,
-        bobotGap,
-        jenisFaktor: kriteria.jenisFaktor,
-      });
-
-      if (kriteria.jenisFaktor === "CORE") {
-        coreWeights.push(bobotGap);
-      } else {
-        secondaryWeights.push(bobotGap);
-      }
-    }
-
-    const nilaiCF = coreWeights.length > 0 ? coreWeights.reduce((a, b) => a + b, 0) / coreWeights.length : 0;
-    const nilaiSF = secondaryWeights.length > 0 ? secondaryWeights.reduce((a, b) => a + b, 0) / secondaryWeights.length : 0;
-
-    const persentaseCF = Number(aspek.persentaseCf) / 100;
-    const persentaseSF = Number(aspek.persentaseSf) / 100;
-    const nilaiTotalAspek = nilaiCF * persentaseCF + nilaiSF * persentaseSF;
-
-    breakdownAspek.push({
-      idAspek,
-      namaAspek: aspek.namaAspek,
-      nilaiCF,
-      nilaiSF,
-      nilaiTotalAspek,
-      bobotAspek: Number(aspek.bobotAspek),
-      detailKriteria,
+    detailKriteria.push({
+      idKriteria: kriteria.idKriteria,
+      kodeKriteria: kriteria.kodeKriteria,
+      namaKriteria: kriteria.namaKriteria,
+      nilaiRating: sub.nilaiRating,
+      nilaiTarget: kriteria.nilaiTarget,
+      gap,
+      bobotGap,
+      jenisFaktor: kriteria.jenisFaktor,
     });
 
-    skorAkhir += nilaiTotalAspek * (Number(aspek.bobotAspek) / 100);
+    if (kriteria.jenisFaktor === "CORE") {
+      coreWeights.push(bobotGap);
+    } else {
+      secondaryWeights.push(bobotGap);
+    }
   }
 
-  const finalScore = Math.round(skorAkhir * 100) / 100;
+  const nilaiCF = coreWeights.length > 0 ? coreWeights.reduce((a, b) => a + b, 0) / coreWeights.length : 0;
+  const nilaiSF = secondaryWeights.length > 0 ? secondaryWeights.reduce((a, b) => a + b, 0) / secondaryWeights.length : 0;
+
+  const persentaseCf = Number(pengajuan.penyediaJasa.persentaseCf);
+  const persentaseSf = Number(pengajuan.penyediaJasa.persentaseSf);
+
+  const skorAkhirRaw = (nilaiCF * (persentaseCf / 100)) + (nilaiSF * (persentaseSf / 100));
+  const finalScore = Math.round(skorAkhirRaw * 100) / 100;
+  const tingkatRisiko = determineRisk(finalScore);
+
+  // 1. Simpan skor & risiko ke SurveyLapangan
+  await prisma.surveyLapangan.upsert({
+    where: { idPengajuan },
+    update: {
+      skorProfileMatching: finalScore,
+      tingkatRisiko,
+    },
+    create: {
+      idPengajuan,
+      skorProfileMatching: finalScore,
+      tingkatRisiko,
+    }
+  });
+
+  // 2. Rule Auto-Decision Status Peminjaman:
+  // - Skor >= 3.01 (covers 3.01 - 5.0) -> DITERIMA
+  // - Skor <= 3.0 (covers < 2.0 and 2.0 - 3.0) -> DITOLAK
+  const statusPeminjaman = finalScore >= 3.01 ? "DITERIMA" : "DITOLAK";
+  await prisma.pengajuan.update({
+    where: { idPengajuan },
+    data: {
+      statusPeminjaman
+    }
+  });
 
   return {
     idPengajuan: pengajuan.idPengajuan,
-    namaDebitur: pengajuan.debitur.namaDebitur,
+    namaNasabah: pengajuan.nasabah.namaNasabah,
     tanggalPengajuan: pengajuan.tanggalPengajuan,
     jumlahKredit: Number(pengajuan.jumlahKredit),
     lamaTenor: pengajuan.lamaTenor,
-    breakdownAspek,
+    nilaiCF,
+    nilaiSF,
+    persentaseCf,
+    persentaseSf,
+    detailKriteria,
     skorAkhir: finalScore,
-    tingkatRisiko: determineRisk(finalScore),
+    tingkatRisiko,
+    statusPeminjaman,
   };
-}
-
-/**
- * Service untuk memetakan data survei mentah menjadi penilaian rating secara otomatis di DB
- * berdasarkan aturan sub-kriteria kreditur yang bersangkutan.
- */
-export async function processSurveyMapping(
-  idPengajuan: number,
-  surveyInput: {
-    totalAset: number;
-    pendapatanBersih: number;
-    statusHunian: string;
-    statusPekerjaan: string;
-    jumlahTanggungan: number;
-    nilaiJaminanAset: number;
-    rasioHutang: number;
-    persentaseJaminan: number;
-    idSubPendapatan?: number | undefined;
-    idSubHunian?: number | undefined;
-    idSubPekerjaan?: number | undefined;
-    idSubTanggungan?: number | undefined;
-  }
-): Promise<void> {
-  const pengajuan = await prisma.pengajuan.findUnique({
-    where: { idPengajuan },
-    include: {
-      kreditur: {
-        include: {
-          aspek: {
-            include: {
-              kriteria: {
-                include: {
-                  subKriteria: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!pengajuan) {
-    throw new Error(`Data pengajuan tidak ditemukan.`);
-  }
-
-  // 1. Bersihkan penilaian lama untuk pengajuan ini jika ada (agar bersifat idempotent)
-  await prisma.penilaian.deleteMany({
-    where: { idPengajuan },
-  });
-
-  // 2. Kumpulkan seluruh kriteria dari Aspek Kreditur ini
-  const kriteriaList = pengajuan.kreditur.aspek.flatMap((aspek) => aspek.kriteria);
-
-  // 3. Iterasi tiap kriteria untuk dicocokkan nilai raw surveynya ke sub_kriteria
-  for (const kriteria of kriteriaList) {
-    let rawValue: any = null;
-    const key = kriteria.namaKriteria.toUpperCase() + "_" + kriteria.kodeKriteria.toUpperCase();
-
-    // Map kriteria ke data survei raw berdasarkan kode/nama kriteria
-    if (key.includes("PENDAPATAN") || key.includes("C1")) {
-      rawValue = surveyInput.pendapatanBersih;
-    } else if (key.includes("HUTANG") || key.includes("RASIO") || key.includes("C2")) {
-      rawValue = surveyInput.rasioHutang;
-    } else if (key.includes("JAMINAN") || key.includes("AGUNAN") || key.includes("PERSENTASE_JAMINAN") || key.includes("C3")) {
-      rawValue = surveyInput.persentaseJaminan;
-    } else if (key.includes("HUNIAN") || key.includes("TINGGAL") || key.includes("C4")) {
-      rawValue = surveyInput.statusHunian;
-    } else if (key.includes("PEKERJAAN") || key.includes("STATUS_KERJA") || key.includes("C5")) {
-      rawValue = surveyInput.statusPekerjaan;
-    } else if (key.includes("TANGGUNGAN") || key.includes("KELUARGA") || key.includes("C6")) {
-      rawValue = surveyInput.jumlahTanggungan;
-    } else if (key.includes("ASET") || key.includes("KEKAYAAN") || key.includes("C7")) {
-      rawValue = surveyInput.totalAset;
-    } else {
-      rawValue = surveyInput.nilaiJaminanAset;
-    }
-
-    // Jika admin memilih dropdown spesifik, gunakan ID tersebut
-    let matchedSubId = 0;
-    if ((key.includes("PENDAPATAN") || key.includes("C1")) && surveyInput.idSubPendapatan) {
-      matchedSubId = Number(surveyInput.idSubPendapatan);
-    } else if ((key.includes("HUNIAN") || key.includes("TINGGAL") || key.includes("C4")) && surveyInput.idSubHunian) {
-      matchedSubId = Number(surveyInput.idSubHunian);
-    } else if ((key.includes("PEKERJAAN") || key.includes("STATUS_KERJA") || key.includes("C5")) && surveyInput.idSubPekerjaan) {
-      matchedSubId = Number(surveyInput.idSubPekerjaan);
-    } else if ((key.includes("TANGGUNGAN") || key.includes("KELUARGA") || key.includes("C6")) && surveyInput.idSubTanggungan) {
-      matchedSubId = Number(surveyInput.idSubTanggungan);
-    }
-
-    let matchedSub;
-    if (matchedSubId > 0) {
-      matchedSub = kriteria.subKriteria.find((sub) => sub.idSub === matchedSubId);
-    }
-
-    // Fallback pencocokan deskripsi teks
-    if (!matchedSub) {
-      matchedSub = kriteria.subKriteria.find((sub) => matchDescription(rawValue, sub.deskripsi));
-    }
-
-    // Fallback jika tidak ada aturan yang cocok, ambil nilai rating terendah
-    if (!matchedSub) {
-      matchedSub = kriteria.subKriteria.sort((a, b) => a.nilaiRating - b.nilaiRating)[0];
-    }
-
-    if (matchedSub) {
-      // Simpan entitas Penilaian di database
-      await prisma.penilaian.create({
-        data: {
-          idPengajuan,
-          idSub: matchedSub.idSub,
-        },
-      });
-    }
-  }
 }

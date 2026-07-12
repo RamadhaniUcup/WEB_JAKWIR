@@ -1,30 +1,30 @@
 import { useState, type FC } from "react";
 import {
-  useGetSuperAdminDebiturs,
-  useCreateSuperAdminDebitur,
-  useUpdateSuperAdminDebitur,
-  useDeleteSuperAdminDebitur,
+  useGetSuperAdminNasabahs,
+  useCreateSuperAdminNasabah,
+  useUpdateSuperAdminNasabah,
+  useDeleteSuperAdminNasabah,
 } from "../../hooks/useApi.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
-interface DebiturRow {
-  idDebitur: number;
-  namaDebitur: string;
+interface NasabahRow {
+  idNasabah: number;
+  namaNasabah: string;
   email: string;
   telepon: string;
   nik: string;
   alamat: string;
 }
 
-export const ManageDebitur: FC = () => {
-  const { data: list, isLoading } = useGetSuperAdminDebiturs();
-  const createMutation = useCreateSuperAdminDebitur();
-  const updateMutation = useUpdateSuperAdminDebitur();
-  const deleteMutation = useDeleteSuperAdminDebitur();
+export const ManageNasabah: FC = () => {
+  const { data: list, isLoading } = useGetSuperAdminNasabahs();
+  const createMutation = useCreateSuperAdminNasabah();
+  const updateMutation = useUpdateSuperAdminNasabah();
+  const deleteMutation = useDeleteSuperAdminNasabah();
 
   // Form State
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [namaDebitur, setNamaDebitur] = useState("");
+  const [namaNasabah, setNamaNasabah] = useState("");
   const [email, setEmail] = useState("");
   const [telepon, setTelepon] = useState("");
   const [nik, setNik] = useState("");
@@ -35,7 +35,7 @@ export const ManageDebitur: FC = () => {
 
   const resetForm = () => {
     setEditingId(null);
-    setNamaDebitur("");
+    setNamaNasabah("");
     setEmail("");
     setTelepon("");
     setNik("");
@@ -44,9 +44,9 @@ export const ManageDebitur: FC = () => {
     setIsOpenForm(false);
   };
 
-  const handleEdit = (d: DebiturRow) => {
-    setEditingId(d.idDebitur);
-    setNamaDebitur(d.namaDebitur);
+  const handleEdit = (d: NasabahRow) => {
+    setEditingId(d.idNasabah);
+    setNamaNasabah(d.namaNasabah);
     setEmail(d.email);
     setTelepon(d.telepon);
     setNik(d.nik);
@@ -59,7 +59,7 @@ export const ManageDebitur: FC = () => {
     e.preventDefault();
 
     const payload: any = {
-      namaDebitur,
+      namaNasabah,
       email,
       telepon,
       nik,
@@ -69,7 +69,7 @@ export const ManageDebitur: FC = () => {
 
     if (editingId) {
       updateMutation.mutate(
-        { idDebitur: editingId, ...payload },
+        { idNasabah: editingId, ...payload },
         {
           onSuccess: () => {
             alert("Biodata nasabah berhasil diupdate!");
@@ -92,7 +92,7 @@ export const ManageDebitur: FC = () => {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("Apakah Anda yakin ingin menghapus profil nasabah (debitur) ini?")) {
+    if (confirm("Apakah Anda yakin ingin menghapus profil nasabah ini?")) {
       deleteMutation.mutate(id, {
         onSuccess: () => {
           alert("Profil nasabah berhasil dihapus.");
@@ -137,8 +137,8 @@ export const ManageDebitur: FC = () => {
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Lengkap Sesuai KTP</label>
                 <input
                   type="text"
-                  value={namaDebitur}
-                  onChange={(e) => setNamaDebitur(e.target.value)}
+                  value={namaNasabah}
+                  onChange={(e) => setNamaNasabah(e.target.value)}
                   className="w-full px-4 py-2.5 bg-white/3 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-sm transition"
                   placeholder="Contoh: Budi Santoso"
                   required
@@ -248,10 +248,10 @@ export const ManageDebitur: FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {list.map((row: DebiturRow) => (
-                  <tr key={row.idDebitur} className="hover:bg-white/[0.01] transition-colors">
-                    <td className="px-6 py-4 font-mono text-xs text-slate-500">#{row.idDebitur}</td>
-                    <td className="px-6 py-4 font-bold text-white whitespace-nowrap">{row.namaDebitur}</td>
+                {list.map((row: NasabahRow) => (
+                  <tr key={row.idNasabah} className="hover:bg-white/[0.01] transition-colors">
+                    <td className="px-6 py-4 font-mono text-xs text-slate-500">#{row.idNasabah}</td>
+                    <td className="px-6 py-4 font-bold text-white whitespace-nowrap">{row.namaNasabah}</td>
                     <td className="px-6 py-4 text-slate-400 text-xs">{row.email}</td>
                     <td className="px-6 py-4 text-slate-300 text-xs">{row.telepon}</td>
                     <td className="px-6 py-4 font-mono text-slate-300 text-xs">{row.nik}</td>
@@ -265,7 +265,7 @@ export const ManageDebitur: FC = () => {
                           Ubah
                         </button>
                         <button
-                          onClick={() => handleDelete(row.idDebitur)}
+                          onClick={() => handleDelete(row.idNasabah)}
                           className="px-2.5 py-1 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-500/20 cursor-pointer"
                         >
                           Hapus
@@ -282,4 +282,4 @@ export const ManageDebitur: FC = () => {
     </div>
   );
 };
-export default ManageDebitur;
+export default ManageNasabah;

@@ -1,22 +1,22 @@
 import { type FC } from "react";
 import { Link } from "react-router-dom";
 import {
-  useGetSuperAdminKrediturs,
+  useGetSuperAdminPenyediaJasas,
   useGetSuperAdminUsers,
-  useGetSuperAdminDebiturs,
+  useGetSuperAdminNasabahs,
 } from "../../hooks/useApi.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
 export const DashboardSuperAdmin: FC = () => {
-  const { data: krediturs, isLoading: loadKreditur } = useGetSuperAdminKrediturs();
+  const { data: penyediaJasas, isLoading: loadPenyediaJasa } = useGetSuperAdminPenyediaJasas();
   const { data: users, isLoading: loadUsers } = useGetSuperAdminUsers();
-  const { data: debiturs, isLoading: loadDebitur } = useGetSuperAdminDebiturs();
+  const { data: nasabahs, isLoading: loadNasabah } = useGetSuperAdminNasabahs();
 
-  const totalKreditur = krediturs?.length || 0;
+  const totalPenyediaJasa = penyediaJasas?.length || 0;
   const totalUser = users?.length || 0;
-  const totalDebitur = debiturs?.length || 0;
+  const totalNasabah = nasabahs?.length || 0;
 
-  const isGlobalLoading = loadKreditur || loadUsers || loadDebitur;
+  const isGlobalLoading = loadPenyediaJasa || loadUsers || loadNasabah;
 
   return (
     <div className="space-y-8 font-sans">
@@ -24,7 +24,7 @@ export const DashboardSuperAdmin: FC = () => {
       {/* Title */}
       <div>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">Dashboard Super Admin</h1>
-        <p className="text-sm text-slate-400 mt-1">Kelola data master nasabah aggregator, instansi kreditur, dan otorisasi login panel.</p>
+        <p className="text-sm text-slate-400 mt-1">Kelola data master nasabah aggregator, instansi penyedia jasa, dan otorisasi login panel.</p>
       </div>
 
       {isGlobalLoading ? (
@@ -37,8 +37,8 @@ export const DashboardSuperAdmin: FC = () => {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <GlassCard className="p-6" hoverEffect={false}>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Total Lembaga Pembiayaan</p>
-              <p className="text-3xl font-extrabold text-white">{totalKreditur} Mitra</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Total Penyedia Jasa</p>
+              <p className="text-3xl font-extrabold text-white">{totalPenyediaJasa} Mitra</p>
               <p className="text-xs text-cyan-400 mt-2 font-semibold">Telah bergabung & aktif</p>
             </GlassCard>
 
@@ -49,8 +49,8 @@ export const DashboardSuperAdmin: FC = () => {
             </GlassCard>
 
             <GlassCard className="p-6" hoverEffect={false}>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nasabah Aggregator (Debitur)</p>
-              <p className="text-3xl font-extrabold text-white">{totalDebitur} Profil</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nasabah Aggregator</p>
+              <p className="text-3xl font-extrabold text-white">{totalNasabah} Profil</p>
               <p className="text-xs text-cyan-400 mt-2 font-semibold">Menggunakan e-KYC tervalidasi</p>
             </GlassCard>
           </div>
@@ -59,11 +59,11 @@ export const DashboardSuperAdmin: FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <GlassCard className="p-6 flex flex-col justify-between" hoverEffect>
               <div>
-                <h3 className="text-lg font-bold text-white mb-2">Kelola Lembaga Pembiayaan</h3>
+                <h3 className="text-lg font-bold text-white mb-2">Kelola Penyedia Jasa</h3>
                 <p className="text-xs text-slate-400 leading-relaxed mb-6">Tambah mitra perbankan, syariah, atau P2P fintech, dan atur batasan limit pinjaman atau cicilan tenor mereka.</p>
               </div>
-              <Link to="/super-admin/kreditur" className="py-2.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold rounded-xl text-center hover:bg-cyan-500/20 transition-all decoration-none">
-                Konfigurasi Kreditur →
+              <Link to="/super-admin/penyedia-jasa" className="py-2.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold rounded-xl text-center hover:bg-cyan-500/20 transition-all decoration-none">
+                Konfigurasi Penyedia Jasa →
               </Link>
             </GlassCard>
 
@@ -82,8 +82,8 @@ export const DashboardSuperAdmin: FC = () => {
                 <h3 className="text-lg font-bold text-white mb-2">Kelola Profil Nasabah</h3>
                 <p className="text-xs text-slate-400 leading-relaxed mb-6">Pantau list biodata nasabah aggregator terdaftar, NIK, dan perbarui data diri KTP mereka secara terpusat.</p>
               </div>
-              <Link to="/super-admin/debitur" className="py-2.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold rounded-xl text-center hover:bg-cyan-500/20 transition-all decoration-none">
-                Konfigurasi Debitur →
+              <Link to="/super-admin/nasabah" className="py-2.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold rounded-xl text-center hover:bg-cyan-500/20 transition-all decoration-none">
+                Konfigurasi Nasabah →
               </Link>
             </GlassCard>
           </div>

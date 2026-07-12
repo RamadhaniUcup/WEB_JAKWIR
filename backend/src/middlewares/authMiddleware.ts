@@ -34,7 +34,7 @@ export function verifyToken(req: AuthenticatedRequest, res: Response, next: Next
 /**
  * Middleware untuk otorisasi akses berdasarkan daftar Role yang diizinkan.
  */
-export function authorizeRoles(...allowedRoles: ("SUPER ADMIN" | "ADMIN" | "DEBITUR")[]) {
+export function authorizeRoles(...allowedRoles: ("SUPER ADMIN" | "ADMIN" | "NASABAH")[]) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({ message: "Unauthorized. Pengguna belum terautentikasi." });

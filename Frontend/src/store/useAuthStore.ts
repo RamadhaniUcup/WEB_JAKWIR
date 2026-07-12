@@ -1,17 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type UserRole = "SUPER ADMIN" | "ADMIN" | "DEBITUR";
+export type UserRole = "SUPER ADMIN" | "ADMIN" | "NASABAH";
 
 export interface AuthUser {
   id: number;
   username?: string;
-  namaDebitur?: string;
+  namaNasabah?: string;
   email: string;
   telepon?: string;
   nik?: string;
   alamat?: string;
-  kreditur?: string;
+  penyediaJasa?: string;
 }
 
 interface AuthState {

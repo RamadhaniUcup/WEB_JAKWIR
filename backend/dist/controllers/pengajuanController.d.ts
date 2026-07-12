@@ -1,27 +1,23 @@
 import { Response } from "express";
 import { AuthenticatedRequest } from "../middlewares/authMiddleware.js";
 /**
- * 3. Submit Pengajuan Kredit (Debitur)
- * Mengajukan permohonan kredit baru ke Kreditur tertentu.
+ * 1. Submit Pengajuan Kredit (Nasabah)
  */
 export declare function createPengajuan(req: AuthenticatedRequest, res: Response): Promise<void>;
 /**
- * 4. Get Pengajuan Khusus Admin (Kreditur)
- * Mengembalikan daftar berkas masuk yang diajukan ke Kreditur (Instansi) Admin saat ini.
+ * 2. Get Pengajuan Khusus Admin (Penyedia Jasa)
  */
 export declare function getPengajuanForAdmin(req: AuthenticatedRequest, res: Response): Promise<void>;
 /**
- * 5 & 6 & 7 & 8 & 9. Input Survey Lapangan & Otomatisasi Kalkulasi SPK (Admin)
+ * 3. Input Survey Lapangan (Pilihan Dropdown)
  */
-export declare function inputSurveyAndCalculate(req: AuthenticatedRequest, res: Response): Promise<void>;
+export declare function inputSurvey(req: AuthenticatedRequest, res: Response): Promise<void>;
 /**
- * 10. Approval Status Pengajuan (Admin)
- * Mengubah status pengajuan menjadi DITERIMA atau DITOLAK.
+ * 4. Approval Status Pengajuan Manual (Admin)
  */
 export declare function updatePengajuanStatus(req: AuthenticatedRequest, res: Response): Promise<void>;
 /**
- * 11 & 12. History Pengajuan Kredit (Debitur)
- * Mengembalikan riwayat pengajuan pribadi debitur bersangkutan.
+ * 5. History Pengajuan Kredit (Nasabah)
  */
-export declare function getDebiturHistory(req: AuthenticatedRequest, res: Response): Promise<void>;
+export declare function getNasabahHistory(req: AuthenticatedRequest, res: Response): Promise<void>;
 //# sourceMappingURL=pengajuanController.d.ts.map

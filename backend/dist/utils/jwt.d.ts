@@ -1,8 +1,8 @@
 export interface TokenPayload {
     id: number;
     email: string;
-    role: "SUPER ADMIN" | "ADMIN" | "DEBITUR";
-    idKreditur?: number | null;
+    role: "SUPER ADMIN" | "ADMIN" | "NASABAH";
+    idPenyediaJasa?: number | null;
 }
 /**
  * Men-generate Access Token JWT berdasarkan payload user.

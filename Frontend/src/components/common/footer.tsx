@@ -74,10 +74,10 @@ export const Footer: FC = () => {
             <span>⚠️ Pernyataan Risiko & Kepatuhan Hukum</span>
           </div>
           <p>
-            JAKWIR adalah platform inovasi keuangan digital yang terdaftar pada Otoritas Jasa Keuangan (OJK). Kami bertindak sebagai agregator yang mempertemukan calon debitur dengan lembaga pembiayaan resmi. JAKWIR tidak pernah menghimpun dana masyarakat atau berperan sebagai pemberi pinjaman langsung.
+            JAKWIR adalah platform inovasi keuangan digital yang terdaftar pada Otoritas Jasa Keuangan (OJK). Kami bertindak sebagai agregator yang mempertemukan calon nasabah dengan lembaga pembiayaan resmi. JAKWIR tidak pernah menghimpun dana masyarakat atau berperan sebagai pemberi pinjaman langsung.
           </p>
           <p>
-            Segala transaksi pinjaman pinjam-meminjam merupakan kesepakatan perdata mutlak antara debitur dengan lembaga kreditur pilihan yang bersangkutan. Pastikan Anda mempelajari detail kontrak pinjaman secara bijak sebelum melakukan konfirmasi perjanjian digital.
+            Segala transaksi pinjaman pinjam-meminjam merupakan kesepakatan perdata mutlak antara nasabah dengan Penyedia Jasa pilihan yang bersangkutan. Pastikan Anda mempelajari detail kontrak pinjaman secara bijak sebelum melakukan konfirmasi perjanjian digital.
           </p>
         </div>
 

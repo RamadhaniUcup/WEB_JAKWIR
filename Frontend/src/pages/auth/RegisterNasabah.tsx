@@ -3,13 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRegisterDebiturMutation } from "../../hooks/useApi.js";
+import { useRegisterNasabahMutation } from "../../hooks/useApi.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
 // 1. Definisikan Skema Validasi Form Registrasi dengan Zod
 const registerSchema = z
   .object({
-    namaDebitur: z.string().min(2, "Nama lengkap minimal terdiri dari 2 karakter"),
+    namaNasabah: z.string().min(2, "Nama lengkap minimal terdiri dari 2 karakter"),
     email: z.string().email("Format alamat email tidak valid"),
     telepon: z.string().min(10, "Nomor handphone minimal terdiri dari 10 digit"),
     nik: z
@@ -27,11 +27,11 @@ const registerSchema = z
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-export const RegisterDebitur: FC = () => {
+export const RegisterNasabah: FC = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
 
-  const registerMutation = useRegisterDebiturMutation();
+  const registerMutation = useRegisterNasabahMutation();
 
   const {
     register,
@@ -48,7 +48,7 @@ export const RegisterDebitur: FC = () => {
     registerMutation.mutate(payload, {
       onSuccess: () => {
         alert("Pendaftaran akun berhasil! Silakan masuk menggunakan akun baru Anda.");
-        navigate("/debitur/login");
+        navigate("/nasabah/login");
       },
       onError: (err: any) => {
         setErrorMsg(err?.response?.data?.message || "Pendaftaran gagal. Email mungkin sudah terdaftar.");
@@ -84,11 +84,11 @@ export const RegisterDebitur: FC = () => {
             <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Lengkap Sesuai KTP</label>
             <input
               type="text"
-              {...register("namaDebitur")}
+              {...register("namaNasabah")}
               className="w-full px-4 py-2.5 bg-white/3 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-sm transition"
               placeholder="Contoh: Budi Santoso"
             />
-            {errors.namaDebitur && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.namaDebitur.message}</p>}
+            {errors.namaNasabah && <p className="text-red-400 text-xs mt-1 font-semibold">{errors.namaNasabah.message}</p>}
           </div>
 
           {/* Email & Telepon */}
@@ -185,7 +185,7 @@ export const RegisterDebitur: FC = () => {
         <div className="mt-6 pt-4 border-t border-white/5 text-center text-xs">
           <p className="text-slate-500">
             Sudah memiliki akun nasabah?{" "}
-            <Link to="/debitur/login" className="text-indigo-400 hover:underline font-bold">
+            <Link to="/nasabah/login" className="text-indigo-400 hover:underline font-bold">
               Masuk di sini
             </Link>
           </p>
@@ -194,3 +194,4 @@ export const RegisterDebitur: FC = () => {
     </div>
   );
 };
+export default RegisterNasabah;

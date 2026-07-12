@@ -4,20 +4,20 @@ import { hashPassword, comparePassword, encrypt, decrypt } from "../utils/securi
 import { generateToken } from "../utils/jwt.js";
 
 /**
- * Registrasi untuk Debitur (Borrower/Nasabah)
+ * Registrasi untuk Nasabah (Borrower)
  * Menerapkan bcrypt hashing pada password dan enkripsi AES-256-CBC pada NIK & Alamat.
  */
-export async function registerDebitur(req: Request, res: Response): Promise<void> {
+export async function registerNasabah(req: Request, res: Response): Promise<void> {
   try {
-    const { namaDebitur, nik, telepon, alamat, password, email } = req.body;
+    const { namaNasabah, nik, telepon, alamat, password, email } = req.body;
 
-    if (!namaDebitur || !nik || !telepon || !alamat || !password || !email) {
-      res.status(400).json({ message: "Semua data registrasi debitur harus diisi." });
+    if (!namaNasabah || !nik || !telepon || !alamat || !password || !email) {
+      res.status(400).json({ message: "Semua data registrasi nasabah harus diisi." });
       return;
     }
 
-    const existingDebitur = await prisma.debitur.findUnique({ where: { email } });
-    if (existingDebitur) {
+    const existingNasabah = await prisma.nasabah.findUnique({ where: { email } });
+    if (existingNasabah) {
       res.status(400).json({ message: "Email sudah terdaftar." });
       return;
     }
@@ -30,9 +30,9 @@ export async function registerDebitur(req: Request, res: Response): Promise<void
     const encryptedAlamat = encrypt(alamat);
 
     // 3. Simpan ke database
-    const debitur = await prisma.debitur.create({
+    const nasabah = await prisma.nasabah.create({
       data: {
-        namaDebitur,
+        namaNasabah,
         nik: encryptedNik,
         telepon,
         alamat: encryptedAlamat,
@@ -42,27 +42,26 @@ export async function registerDebitur(req: Request, res: Response): Promise<void
     });
 
     res.status(201).json({
-      message: "Debitur berhasil diregistrasikan.",
+      message: "Nasabah berhasil diregistrasikan.",
       data: {
-        idDebitur: debitur.idDebitur,
-        namaDebitur: debitur.namaDebitur,
-        email: debitur.email,
-        // NIK dan Alamat disimpan terenkripsi di DB, kirim yang aman/terekstrasi jika diperlukan
+        idNasabah: nasabah.idNasabah,
+        namaNasabah: nasabah.namaNasabah,
+        email: nasabah.email,
       },
     });
   } catch (error) {
-    console.error("Error registrasi debitur:", error);
+    console.error("Error registrasi nasabah:", error);
     res.status(500).json({ message: "Terjadi kesalahan internal server." });
   }
 }
 
 /**
- * Registrasi untuk User Admin / Super Admin (Mitra Kreditur)
+ * Registrasi untuk User Admin / Super Admin (Mitra Penyedia Jasa)
  * Menerapkan bcrypt hashing pada password.
  */
 export async function registerUser(req: Request, res: Response): Promise<void> {
   try {
-    const { username, password, email, role, idKreditur } = req.body;
+    const { username, password, email, role, idPenyediaJasa } = req.body;
 
     if (!username || !password || !email || !role) {
       res.status(400).json({ message: "Username, password, email, dan role wajib diisi." });
@@ -83,7 +82,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         password: hashedPassword,
         email,
         role: role === "SUPER ADMIN" ? "SUPER_ADMIN" : "ADMIN",
-        idKreditur: idKreditur ? Number(idKreditur) : null,
+        idPenyediaJasa: idPenyediaJasa ? Number(idPenyediaJasa) : null,
       },
     });
 
@@ -94,7 +93,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         username: user.username,
         email: user.email,
         role: user.role,
-        idKreditur: user.idKreditur,
+        idPenyediaJasa: user.idPenyediaJasa,
       },
     });
   } catch (error) {
@@ -104,7 +103,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * Login untuk Admin / Super Admin (Mitra Kreditur)
+ * Login untuk Admin / Super Admin (Mitra Penyedia Jasa)
  */
 export async function loginUser(req: Request, res: Response): Promise<void> {
   try {
@@ -117,7 +116,7 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
 
     const user = await prisma.users.findUnique({
       where: { email },
-      include: { kreditur: true },
+      include: { penyediaJasa: true },
     });
 
     if (!user) {
@@ -136,7 +135,7 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
       id: user.idUser,
       email: user.email,
       role: user.role === "SUPER_ADMIN" ? "SUPER ADMIN" : "ADMIN",
-      idKreditur: user.idKreditur,
+      idPenyediaJasa: user.idPenyediaJasa,
     });
 
     res.status(200).json({
@@ -147,7 +146,7 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
         username: user.username,
         email: user.email,
         role: user.role === "SUPER_ADMIN" ? "SUPER ADMIN" : "ADMIN",
-        kreditur: user.kreditur ? user.kreditur.namaPerusahaan : "Global Admin",
+        penyediaJasa: user.penyediaJasa ? user.penyediaJasa.namaPenyediaJasa : "Global Admin",
       },
     });
   } catch (error) {
@@ -157,9 +156,9 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * Login untuk Debitur (Borrower/Nasabah)
+ * Login untuk Nasabah (Borrower)
  */
-export async function loginDebitur(req: Request, res: Response): Promise<void> {
+export async function loginNasabah(req: Request, res: Response): Promise<void> {
   try {
     const { email, password } = req.body;
 
@@ -168,94 +167,94 @@ export async function loginDebitur(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const debitur = await prisma.debitur.findUnique({ where: { email } });
-    if (!debitur) {
+    const nasabah = await prisma.nasabah.findUnique({ where: { email } });
+    if (!nasabah) {
       res.status(401).json({ message: "Kredensial tidak valid." });
       return;
     }
 
-    const isMatch = await comparePassword(password, debitur.password);
+    const isMatch = await comparePassword(password, nasabah.password);
     if (!isMatch) {
       res.status(401).json({ message: "Kredensial tidak valid." });
       return;
     }
 
-    // Dekripsi data NIK dan Alamat untuk dikirimkan kembali (Opsional, mendemonstrasikan dekripsi)
-    const decryptedNik = decrypt(debitur.nik);
-    const decryptedAlamat = decrypt(debitur.alamat);
+    // Dekripsi data NIK dan Alamat untuk dikirimkan kembali
+    const decryptedNik = decrypt(nasabah.nik);
+    const decryptedAlamat = decrypt(nasabah.alamat);
 
     const token = generateToken({
-      id: debitur.idDebitur,
-      email: debitur.email,
-      role: "DEBITUR",
-      idKreditur: null,
+      id: nasabah.idNasabah,
+      email: nasabah.email,
+      role: "NASABAH",
+      idPenyediaJasa: null,
     });
 
     res.status(200).json({
-      message: "Login debitur berhasil.",
+      message: "Login nasabah berhasil.",
       token,
-      debitur: {
-        idDebitur: debitur.idDebitur,
-        namaDebitur: debitur.namaDebitur,
-        email: debitur.email,
-        telepon: debitur.telepon,
-        nik: decryptedNik, // Terkirim setelah didekripsi dengan aman
-        alamat: decryptedAlamat, // Terkirim setelah didekripsi dengan aman
+      nasabah: {
+        idNasabah: nasabah.idNasabah,
+        namaNasabah: nasabah.namaNasabah,
+        email: nasabah.email,
+        telepon: nasabah.telepon,
+        nik: decryptedNik,
+        alamat: decryptedAlamat,
       },
     });
   } catch (error) {
-    console.error("Error login debitur:", error);
+    console.error("Error login nasabah:", error);
     res.status(500).json({ message: "Terjadi kesalahan internal server." });
   }
 }
 
 /**
- * Mengambil daftar seluruh kreditur aktif (untuk pilihan di form registrasi/pengajuan)
+ * Mengambil daftar seluruh penyedia jasa aktif
  */
-export async function getPublicKrediturList(req: any, res: Response): Promise<void> {
+export async function getPublicPenyediaJasaList(req: any, res: Response): Promise<void> {
   try {
-    const list = await prisma.kreditur.findMany({
+    const list = await prisma.penyediaJasa.findMany({
       where: { statusAktif: "AKTIF" }
     });
     res.status(200).json({ data: list });
   } catch (error) {
-    console.error("Error get public kreditur list:", error);
-    res.status(500).json({ message: "Terjadi kesalahan saat mengambil daftar lembaga kreditur." });
+    console.error("Error get public penyedia jasa list:", error);
+    res.status(500).json({ message: "Terjadi kesalahan saat mengambil daftar penyedia jasa." });
   }
 }
 
 /**
- * Mengambil detail satu kreditur berdasarkan ID (untuk mengambil batas limit & tenor)
+ * Mengambil detail satu penyedia jasa berdasarkan ID
  */
-export async function getPublicKrediturDetails(req: any, res: Response): Promise<void> {
+export async function getPublicPenyediaJasaDetails(req: any, res: Response): Promise<void> {
   try {
-    const idKreditur = Number(req.params.id);
-    const kreditur = await prisma.kreditur.findUnique({
-      where: { idKreditur }
+    const idPenyediaJasa = Number(req.params.id);
+    const pj = await prisma.penyediaJasa.findUnique({
+      where: { idPenyediaJasa }
     });
 
-    if (!kreditur) {
-      res.status(404).json({ message: "Kreditur tidak ditemukan." });
+    if (!pj) {
+      res.status(404).json({ message: "Penyedia jasa tidak ditemukan." });
       return;
     }
 
-    res.status(200).json({ data: kreditur });
+    res.status(200).json({ data: pj });
   } catch (error) {
-    console.error("Error get public kreditur details:", error);
-    res.status(500).json({ message: "Terjadi kesalahan saat mengambil detail lembaga kreditur." });
+    console.error("Error get public penyedia jasa details:", error);
+    res.status(500).json({ message: "Terjadi kesalahan saat mengambil detail penyedia jasa." });
   }
 }
 
 /**
- * Mengambil statistik agregat publik (untuk counter di landing page)
+ * Mengambil statistik agregat publik
  */
 export async function getPublicStats(req: any, res: Response): Promise<void> {
   try {
-    const totalKreditur = await prisma.kreditur.count({
+    const totalPenyediaJasa = await prisma.penyediaJasa.count({
       where: { statusAktif: "AKTIF" }
     });
 
-    const totalDebitur = await prisma.debitur.count();
+    const totalNasabah = await prisma.nasabah.count();
 
     const aggregateDana = await prisma.pengajuan.aggregate({
       where: { statusPeminjaman: "DITERIMA" },
@@ -268,8 +267,8 @@ export async function getPublicStats(req: any, res: Response): Promise<void> {
 
     res.status(200).json({
       data: {
-        totalKreditur,
-        totalDebitur,
+        totalKreditur: totalPenyediaJasa,
+        totalDebitur: totalNasabah,
         totalDanaDisalurkan: sumDana
       }
     });

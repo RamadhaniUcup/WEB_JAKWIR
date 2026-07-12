@@ -1,20 +1,18 @@
 import { prisma } from "../db.js";
-import { processSurveyMapping, calculateProfileMatching } from "../services/profileMatchingService.js";
 import { decrypt } from "../utils/security.js";
 /**
- * 3. Submit Pengajuan Kredit (Debitur)
- * Mengajukan permohonan kredit baru ke Kreditur tertentu.
+ * 1. Submit Pengajuan Kredit (Nasabah)
  */
 export async function createPengajuan(req, res) {
     try {
-        const idDebitur = req.user?.id;
-        const { idKreditur, jumlahKredit, lamaTenor } = req.body;
-        if (!idDebitur) {
+        const idNasabah = req.user?.id;
+        const { idPenyediaJasa, jumlahKredit, lamaTenor } = req.body;
+        if (!idNasabah) {
             res.status(401).json({ message: "Unauthorized. Pengguna tidak teridentifikasi." });
             return;
         }
-        if (!idKreditur || !jumlahKredit || !lamaTenor) {
-            res.status(400).json({ message: "Data pengajuan (idKreditur, jumlahKredit, lamaTenor) tidak lengkap." });
+        if (!idPenyediaJasa || !jumlahKredit || !lamaTenor) {
+            res.status(400).json({ message: "Data pengajuan tidak lengkap." });
             return;
         }
         // Buat pengajuan baru, status otomatis "DIPROSES"
@@ -22,8 +20,8 @@ export async function createPengajuan(req, res) {
             data: {
                 tanggalPengajuan: new Date(),
                 statusPeminjaman: "DIPROSES",
-                idDebitur: Number(idDebitur),
-                idKreditur: Number(idKreditur),
+                idNasabah: Number(idNasabah),
+                idPenyediaJasa: Number(idPenyediaJasa),
                 jumlahKredit: Number(jumlahKredit),
                 lamaTenor: Number(lamaTenor),
             },
@@ -39,24 +37,28 @@ export async function createPengajuan(req, res) {
     }
 }
 /**
- * 4. Get Pengajuan Khusus Admin (Kreditur)
- * Mengembalikan daftar berkas masuk yang diajukan ke Kreditur (Instansi) Admin saat ini.
+ * 2. Get Pengajuan Khusus Admin (Penyedia Jasa)
  */
 export async function getPengajuanForAdmin(req, res) {
     try {
-        const idKreditur = req.user?.idKreditur;
-        if (!idKreditur) {
-            res.status(403).json({ message: "Forbidden. Hanya admin kreditur resmi yang dapat mengakses berkas masuk." });
+        const idPenyediaJasa = req.user?.idPenyediaJasa;
+        if (!idPenyediaJasa) {
+            res.status(403).json({ message: "Forbidden. Hanya admin penyedia jasa yang dapat mengakses berkas masuk." });
             return;
         }
         const pengajuanList = await prisma.pengajuan.findMany({
-            where: { idKreditur },
+            where: { idPenyediaJasa },
             include: {
-                debitur: true,
+                nasabah: true,
                 survey: true,
+                penilaian: {
+                    include: {
+                        subKriteria: true
+                    }
+                }
             },
         });
-        // Dekripsi NIK & Alamat untuk kemudahan analisis admin di server response
+        // Dekripsi NIK & Alamat untuk kemudahan analisis admin
         const formattedList = pengajuanList.map((p) => ({
             idPengajuan: p.idPengajuan,
             tanggalPengajuan: p.tanggalPengajuan,
@@ -64,13 +66,14 @@ export async function getPengajuanForAdmin(req, res) {
             jumlahKredit: p.jumlahKredit,
             lamaTenor: p.lamaTenor,
             survey: p.survey,
-            debitur: {
-                idDebitur: p.debitur.idDebitur,
-                namaDebitur: p.debitur.namaDebitur,
-                email: p.debitur.email,
-                telepon: p.debitur.telepon,
-                nik: decrypt(p.debitur.nik), // Dekripsi untuk admin
-                alamat: decrypt(p.debitur.alamat), // Dekripsi untuk admin
+            penilaian: p.penilaian,
+            nasabah: {
+                idNasabah: p.nasabah.idNasabah,
+                namaNasabah: p.nasabah.namaNasabah,
+                email: p.nasabah.email,
+                telepon: p.nasabah.telepon,
+                nik: decrypt(p.nasabah.nik),
+                alamat: decrypt(p.nasabah.alamat),
             },
         }));
         res.status(200).json({ data: formattedList });
@@ -81,27 +84,21 @@ export async function getPengajuanForAdmin(req, res) {
     }
 }
 /**
- * 5 & 6 & 7 & 8 & 9. Input Survey Lapangan & Otomatisasi Kalkulasi SPK (Admin)
+ * 3. Input Survey Lapangan (Pilihan Dropdown)
  */
-export async function inputSurveyAndCalculate(req, res) {
+export async function inputSurvey(req, res) {
     try {
         const idPengajuan = Number(req.params.id);
-        const idKrediturAdmin = req.user?.idKreditur;
-        const { totalAset, pendapatanBersih, statusHunian, statusPekerjaan, jumlahTanggungan, nilaiJaminanAset, idSubPendapatan, idSubHunian, idSubPekerjaan, idSubTanggungan } = req.body;
-        if (!idKrediturAdmin) {
-            res.status(403).json({ message: "Forbidden. Hanya admin kreditur yang dapat menginput hasil survey." });
+        const idPenyediaJasaAdmin = req.user?.idPenyediaJasa;
+        const { subIds } = req.body; // Array of selected subKriteria IDs
+        if (!idPenyediaJasaAdmin) {
+            res.status(403).json({ message: "Forbidden. Hanya admin penyedia jasa yang dapat menginput hasil survey." });
             return;
         }
-        if (totalAset === undefined ||
-            pendapatanBersih === undefined ||
-            !statusHunian ||
-            !statusPekerjaan ||
-            jumlahTanggungan === undefined ||
-            nilaiJaminanAset === undefined) {
-            res.status(400).json({ message: "Data survey lapangan tidak lengkap." });
+        if (!subIds || !Array.isArray(subIds) || subIds.length === 0) {
+            res.status(400).json({ message: "Pilihan opsi sub-kriteria wajib diisi." });
             return;
         }
-        // Validasi pengajuan terdaftar dan milik instansi admin
         const pengajuan = await prisma.pengajuan.findUnique({
             where: { idPengajuan },
         });
@@ -109,100 +106,66 @@ export async function inputSurveyAndCalculate(req, res) {
             res.status(404).json({ message: "Berkas pengajuan tidak ditemukan." });
             return;
         }
-        if (pengajuan.idKreditur !== idKrediturAdmin) {
-            res.status(403).json({ message: "Forbidden. Berkas pengajuan ini milik lembaga mitra lain." });
+        if (pengajuan.idPenyediaJasa !== idPenyediaJasaAdmin) {
+            res.status(403).json({ message: "Forbidden. Berkas pengajuan milik instansi lain." });
             return;
         }
-        // 7. Auto-Calculate Ratios
-        // - Rasio Hutang = (jumlah tanggungan * 1.500.000 / pendapatan bersih) * 100 (persentase estimasi tanggungan)
-        const rawRasioHutang = (Number(jumlahTanggungan) * 1500000) / Number(pendapatanBersih);
-        const rasioHutang = Math.min(Math.round(rawRasioHutang * 100 * 100) / 100, 100); // Batas maksimal 100%
-        // - Persentase Jaminan = (Nilai Jaminan / Jumlah Kredit) * 100
-        const persentaseJaminan = Math.round((Number(nilaiJaminanAset) / Number(pengajuan.jumlahKredit)) * 100 * 100) / 100;
-        const surveyRawData = {
-            totalAset: Number(totalAset),
-            pendapatanBersih: Number(pendapatanBersih),
-            statusHunian,
-            statusPekerjaan,
-            jumlahTanggungan: Number(jumlahTanggungan),
-            nilaiJaminanAset: Number(nilaiJaminanAset),
-            rasioHutang,
-            persentaseJaminan,
-            idSubPendapatan: idSubPendapatan ? Number(idSubPendapatan) : undefined,
-            idSubHunian: idSubHunian ? Number(idSubHunian) : undefined,
-            idSubPekerjaan: idSubPekerjaan ? Number(idSubPekerjaan) : undefined,
-            idSubTanggungan: idSubTanggungan ? Number(idSubTanggungan) : undefined,
-        };
-        // 8. Auto-Calculate Profile Matching (Mapping & Perhitungan)
-        // - Memetakan survey ke rating sub_kriteria dan membuat Penilaian baru
-        await processSurveyMapping(idPengajuan, surveyRawData);
-        // - Menghitung total skor menggunakan Profile Matching Service
-        const hasilSPK = await calculateProfileMatching(idPengajuan);
-        // 9. Simpan / Update data Survey Lapangan ke database beserta tingkat risikonya
+        // 1. Simpan atau update Penilaian
+        await prisma.penilaian.deleteMany({
+            where: { idPengajuan }
+        });
+        for (const idSub of subIds) {
+            await prisma.penilaian.create({
+                data: {
+                    idPengajuan,
+                    idSub: Number(idSub)
+                }
+            });
+        }
+        // 2. Buat atau update SurveyLapangan record (Mengosongkan skor/risiko lama)
         const surveyDb = await prisma.surveyLapangan.upsert({
             where: { idPengajuan },
             update: {
-                totalAset: Number(totalAset),
-                pendapatanBersih: Number(pendapatanBersih),
-                statusHunian: statusHunian,
-                statusPekerjaan: statusPekerjaan,
-                jumlahTanggungan: Number(jumlahTanggungan),
-                nilaiJaminanAset: Number(nilaiJaminanAset),
-                rasioHutang,
-                persentaseJaminan,
-                skorProfileMatching: hasilSPK.skorAkhir,
-                tingkatRisiko: hasilSPK.tingkatRisiko,
-                idSubPendapatan: idSubPendapatan ? Number(idSubPendapatan) : null,
-                idSubHunian: idSubHunian ? Number(idSubHunian) : null,
-                idSubPekerjaan: idSubPekerjaan ? Number(idSubPekerjaan) : null,
-                idSubTanggungan: idSubTanggungan ? Number(idSubTanggungan) : null,
+                skorProfileMatching: null,
+                tingkatRisiko: null,
             },
             create: {
                 idPengajuan,
-                totalAset: Number(totalAset),
-                pendapatanBersih: Number(pendapatanBersih),
-                statusHunian: statusHunian,
-                statusPekerjaan: statusPekerjaan,
-                jumlahTanggungan: Number(jumlahTanggungan),
-                nilaiJaminanAset: Number(nilaiJaminanAset),
-                rasioHutang,
-                persentaseJaminan,
-                skorProfileMatching: hasilSPK.skorAkhir,
-                tingkatRisiko: hasilSPK.tingkatRisiko,
-                idSubPendapatan: idSubPendapatan ? Number(idSubPendapatan) : null,
-                idSubHunian: idSubHunian ? Number(idSubHunian) : null,
-                idSubPekerjaan: idSubPekerjaan ? Number(idSubPekerjaan) : null,
-                idSubTanggungan: idSubTanggungan ? Number(idSubTanggungan) : null,
-            },
+                skorProfileMatching: null,
+                tingkatRisiko: null,
+            }
+        });
+        // 3. Ubah status pengajuan menjadi MENUNGGU_SPK
+        await prisma.pengajuan.update({
+            where: { idPengajuan },
+            data: {
+                statusPeminjaman: "MENUNGGU_SPK"
+            }
         });
         res.status(200).json({
-            message: "Data survey lapangan berhasil diinput dan skor Profile Matching telah dikalkulasi.",
-            data: {
-                survey: surveyDb,
-                kalkulasiSPK: hasilSPK,
-            },
+            message: "Data survey lapangan berhasil disimpan. Status berubah menjadi MENUNGGU_SPK.",
+            data: surveyDb
         });
     }
     catch (error) {
-        console.error("Error input survey & hitung:", error);
-        res.status(500).json({ message: error.message || "Gagal menginput survei dan menghitung kelayakan kredit." });
+        console.error("Error input survey:", error);
+        res.status(500).json({ message: error.message || "Gagal menyimpan survei lapangan." });
     }
 }
 /**
- * 10. Approval Status Pengajuan (Admin)
- * Mengubah status pengajuan menjadi DITERIMA atau DITOLAK.
+ * 4. Approval Status Pengajuan Manual (Admin)
  */
 export async function updatePengajuanStatus(req, res) {
     try {
         const idPengajuan = Number(req.params.id);
-        const idKrediturAdmin = req.user?.idKreditur;
+        const idPenyediaJasaAdmin = req.user?.idPenyediaJasa;
         const { statusPeminjaman } = req.body;
-        if (!idKrediturAdmin) {
-            res.status(403).json({ message: "Forbidden. Hanya admin kreditur yang dapat memproses pengajuan." });
+        if (!idPenyediaJasaAdmin) {
+            res.status(403).json({ message: "Forbidden. Hanya admin penyedia jasa yang dapat memproses pengajuan." });
             return;
         }
-        if (!statusPeminjaman || !["DITERIMA", "DITOLAK"].includes(statusPeminjaman)) {
-            res.status(400).json({ message: "Status peminjaman tidak valid (harus DITERIMA atau DITOLAK)." });
+        if (!statusPeminjaman || !["DITERIMA", "DITOLAK", "DIPROSES", "MENUNGGU_SPK"].includes(statusPeminjaman)) {
+            res.status(400).json({ message: "Status peminjaman tidak valid." });
             return;
         }
         const pengajuan = await prisma.pengajuan.findUnique({ where: { idPengajuan } });
@@ -210,7 +173,7 @@ export async function updatePengajuanStatus(req, res) {
             res.status(404).json({ message: "Pengajuan tidak ditemukan." });
             return;
         }
-        if (pengajuan.idKreditur !== idKrediturAdmin) {
+        if (pengajuan.idPenyediaJasa !== idPenyediaJasaAdmin) {
             res.status(403).json({ message: "Forbidden. Tidak memiliki akses mengubah berkas instansi lain." });
             return;
         }
@@ -231,20 +194,19 @@ export async function updatePengajuanStatus(req, res) {
     }
 }
 /**
- * 11 & 12. History Pengajuan Kredit (Debitur)
- * Mengembalikan riwayat pengajuan pribadi debitur bersangkutan.
+ * 5. History Pengajuan Kredit (Nasabah)
  */
-export async function getDebiturHistory(req, res) {
+export async function getNasabahHistory(req, res) {
     try {
-        const idDebitur = req.user?.id;
-        if (!idDebitur) {
+        const idNasabah = req.user?.id;
+        if (!idNasabah) {
             res.status(401).json({ message: "Unauthorized. Pengguna tidak teridentifikasi." });
             return;
         }
         const history = await prisma.pengajuan.findMany({
-            where: { idDebitur },
+            where: { idNasabah },
             include: {
-                kreditur: true,
+                penyediaJasa: true,
                 survey: true,
             },
             orderBy: { tanggalPengajuan: "desc" },
@@ -252,7 +214,7 @@ export async function getDebiturHistory(req, res) {
         res.status(200).json({ data: history });
     }
     catch (error) {
-        console.error("Error get history debitur:", error);
+        console.error("Error get history nasabah:", error);
         res.status(500).json({ message: "Gagal mengambil data histori pengajuan." });
     }
 }

@@ -6,10 +6,10 @@ import "dotenv/config";
 import authRoutes from "./routes/authRoutes.js";
 import kriteriaRoutes from "./routes/kriteriaRoutes.js";
 import spkRoutes from "./routes/spkRoutes.js";
-import debiturRoutes from "./routes/debiturRoutes.js";
+import nasabahRoutes from "./routes/nasabahRoutes.js";
 import pengajuanRoutes from "./routes/pengajuanRoutes.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
-import krediturSettingRoutes from "./routes/krediturSettingRoutes.js";
+import penyediaJasaSettingRoutes from "./routes/penyediaJasaSettingRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,10 +22,10 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/kriteria", kriteriaRoutes);
 app.use("/api/spk", spkRoutes);
-app.use("/api/debitur", debiturRoutes);
+app.use("/api/nasabah", nasabahRoutes);
 app.use("/api/pengajuan", pengajuanRoutes);
 app.use("/api/super-admin", superAdminRoutes);
-app.use("/api/kreditur-settings", krediturSettingRoutes);
+app.use("/api/penyedia-jasa-settings", penyediaJasaSettingRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

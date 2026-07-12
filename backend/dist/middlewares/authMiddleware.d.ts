@@ -10,5 +10,5 @@ export declare function verifyToken(req: AuthenticatedRequest, res: Response, ne
 /**
  * Middleware untuk otorisasi akses berdasarkan daftar Role yang diizinkan.
  */
-export declare function authorizeRoles(...allowedRoles: ("SUPER ADMIN" | "ADMIN" | "DEBITUR")[]): (req: AuthenticatedRequest, res: Response, next: NextFunction) => void;
+export declare function authorizeRoles(...allowedRoles: ("SUPER ADMIN" | "ADMIN" | "NASABAH")[]): (req: AuthenticatedRequest, res: Response, next: NextFunction) => void;
 //# sourceMappingURL=authMiddleware.d.ts.map

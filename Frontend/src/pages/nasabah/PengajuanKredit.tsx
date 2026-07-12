@@ -1,41 +1,41 @@
 import { useState, useEffect, type FC, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGetKrediturList, useGetKrediturDetails, useSubmitPengajuan } from "../../hooks/useApi.js";
+import { useGetPenyediaJasaList, useGetPenyediaJasaDetails, useSubmitPengajuan } from "../../hooks/useApi.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
 export const PengajuanKredit: FC = () => {
-  const [idKreditur, setIdKreditur] = useState("");
+  const [idPenyediaJasa, setIdPenyediaJasa] = useState("");
   const [nominal, setNominal] = useState(5000000);
   const [tenor, setTenor] = useState("12");
   const [keperluan, setKeperluan] = useState("");
   
   const navigate = useNavigate();
 
-  // Fetch daftar kreditur publik
-  const { data: krediturList, isLoading: isKrediturLoading } = useGetKrediturList();
+  // Fetch daftar penyedia jasa publik
+  const { data: penyediaJasaList, isLoading: isPjLoading } = useGetPenyediaJasaList();
   
-  // Fetch detail limit kreditur terpilih
-  const selectedId = Number(idKreditur);
-  const { data: detailKreditur } = useGetKrediturDetails(selectedId);
+  // Fetch detail limit penyedia jasa terpilih
+  const selectedId = Number(idPenyediaJasa);
+  const { data: detailPj } = useGetPenyediaJasaDetails(selectedId);
   const submitPengajuanMutation = useSubmitPengajuan();
 
   // Batas limit & tenor default
-  const maxLimit = detailKreditur ? Number(detailKreditur.limitPengajuan) : 10000000;
-  const maxTenor = detailKreditur ? Number(detailKreditur.limitTenor) : 12;
+  const maxLimit = detailPj ? Number(detailPj.limitPengajuan) : 10000000;
+  const maxTenor = detailPj ? Number(detailPj.limitTenor) : 12;
 
-  // Sesuaikan nilai nominal jika melebihi batas limit ketika kreditur terpilih berubah
+  // Sesuaikan nilai nominal jika melebihi batas limit ketika penyedia jasa terpilih berubah
   useEffect(() => {
-    if (detailKreditur) {
-      const limit = Number(detailKreditur.limitPengajuan);
+    if (detailPj) {
+      const limit = Number(detailPj.limitPengajuan);
       if (nominal > limit) {
         setNominal(limit);
       }
-      const tenorInt = Number(detailKreditur.limitTenor);
+      const tenorInt = Number(detailPj.limitTenor);
       if (Number(tenor) > tenorInt) {
         setTenor(String(tenorInt));
       }
     }
-  }, [detailKreditur]);
+  }, [detailPj]);
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -48,8 +48,8 @@ export const PengajuanKredit: FC = () => {
   const handleKirim = (e: FormEvent) => {
     e.preventDefault();
 
-    if (!idKreditur) {
-      alert("Harap pilih lembaga kreditur terlebih dahulu!");
+    if (!idPenyediaJasa) {
+      alert("Harap pilih lembaga Penyedia Jasa terlebih dahulu!");
       return;
     }
 
@@ -59,20 +59,20 @@ export const PengajuanKredit: FC = () => {
     }
 
     if (nominal > maxLimit) {
-      alert(`Nominal pinjaman melebihi batas limit kreditur (${formatRupiah(maxLimit)})!`);
+      alert(`Nominal pinjaman melebihi batas limit Penyedia Jasa (${formatRupiah(maxLimit)})!`);
       return;
     }
 
     submitPengajuanMutation.mutate(
       {
-        idKreditur: Number(idKreditur),
+        idPenyediaJasa: Number(idPenyediaJasa),
         jumlahKredit: nominal,
         lamaTenor: Number(tenor),
       },
       {
         onSuccess: () => {
           alert("Pengajuan kredit berhasil terkirim dan status Anda sekarang: DIPROSES.");
-          navigate("/debitur/history");
+          navigate("/nasabah/history");
         },
         onError: (err: any) => {
           alert(`Gagal mengirim pengajuan: ${err?.response?.data?.message || err.message}`);
@@ -91,30 +91,30 @@ export const PengajuanKredit: FC = () => {
         <p className="text-xs text-slate-400 mb-6">Ajukan limit pembiayaan sesuai kebutuhan usaha atau konsumtif Anda.</p>
         
         <form onSubmit={handleKirim} className="space-y-6">
-          {/* Pilih Lembaga Kreditur */}
+          {/* Pilih Lembaga Penyedia Jasa */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Pilih Mitra Lembaga Kreditur</label>
-            {isKrediturLoading ? (
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Pilih Mitra Penyedia Jasa</label>
+            {isPjLoading ? (
               <div className="text-xs text-slate-400">Loading daftar lembaga...</div>
             ) : (
               <select
-                value={idKreditur}
-                onChange={(e) => setIdKreditur(e.target.value)}
+                value={idPenyediaJasa}
+                onChange={(e) => setIdPenyediaJasa(e.target.value)}
                 className="w-full px-4 py-3 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition cursor-pointer"
                 required
               >
                 <option value="">-- Pilih Lembaga --</option>
-                {krediturList?.map((k) => (
-                  <option key={k.idKreditur} value={k.idKreditur}>
-                    {k.namaPerusahaan}
+                {penyediaJasaList?.map((k) => (
+                  <option key={k.idPenyediaJasa} value={k.idPenyediaJasa}>
+                    {k.namaPenyediaJasa}
                   </option>
                 ))}
               </select>
             )}
           </div>
 
-          {/* Menampilkan limit pembiayaan jika kreditur terpilih */}
-          {detailKreditur && (
+          {/* Menampilkan limit pembiayaan jika penyedia jasa terpilih */}
+          {detailPj && (
             <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 grid grid-cols-2 gap-4 text-xs font-semibold">
               <div>
                 <p className="text-slate-400">Limit Pinjaman Mitra:</p>
@@ -140,7 +140,7 @@ export const PengajuanKredit: FC = () => {
               max={maxLimit}
               value={nominal || ""}
               onChange={(e) => setNominal(Number(e.target.value))}
-              disabled={!idKreditur}
+              disabled={!idPenyediaJasa}
               className="w-full px-4 py-3 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold" 
               placeholder="Contoh: 15000000"
               required 
@@ -152,13 +152,13 @@ export const PengajuanKredit: FC = () => {
             </div>
           </div>
 
-          {/* Tenor Jangka Waktu (Dibersihkan agar tidak melebihi limitTenor) */}
+          {/* Tenor Jangka Waktu */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Tenor Jangka Waktu (Bulan)</label>
             <select 
               value={tenor}
               onChange={(e) => setTenor(e.target.value)}
-              disabled={!idKreditur}
+              disabled={!idPenyediaJasa}
               className="w-full px-4 py-3 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {tenorOptions
@@ -196,7 +196,7 @@ export const PengajuanKredit: FC = () => {
 
           <button 
             type="submit" 
-            disabled={submitPengajuanMutation.isPending || !idKreditur}
+            disabled={submitPengajuanMutation.isPending || !idPenyediaJasa}
             className="w-full py-3 bg-linear-to-r from-indigo-500 to-cyan-500 text-slate-950 font-bold rounded-xl shadow-lg hover:opacity-90 transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitPengajuanMutation.isPending ? (

@@ -3,35 +3,36 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Layouts
 import MainLayout from "./layouts/mainLayouts.tsx";
-import { KrediturDashboardLayout } from "./layouts/KrediturDashboardLayouts.tsx";
+import { PenyediaJasaDashboardLayout } from "./layouts/PenyediaJasaDashboardLayouts.tsx";
 import { SuperAdminDashboardLayout } from "./layouts/SuperAdminDashboardLayouts.tsx";
 
 // Protected Route Wrapper
 import ProtectedRoute from "./routes/ProtectedRoutes.tsx";
 
-// Pages - Publik & Debitur
+// Pages - Publik & Nasabah
 import Beranda from "./pages/beranda.tsx";
 import { InfoAplikasi } from "./pages/InfoAplikasi.tsx";
-import { DataKreditur } from "./pages/debitur/DataKreditur.tsx";
-import { HistoryPengajuan } from "./pages/debitur/HistoryPengajuan.tsx";
-import { EditProfile } from "./pages/debitur/EditProfile.tsx";
-import { PengajuanKredit } from "./pages/debitur/PengajuanKredit.tsx";
-import { LoginDebitur } from "./pages/auth/LoginDebitur.tsx";
-import { RegisterDebitur } from "./pages/auth/RegisterDebitur.tsx";
-import { LoginKreditur } from "./pages/auth/LoginKreditur.tsx";
+import { DataPenyediaJasa } from "./pages/nasabah/DataPenyediaJasa.tsx";
+import { HistoryPengajuan } from "./pages/nasabah/HistoryPengajuan.tsx";
+import { EditProfile } from "./pages/nasabah/EditProfile.tsx";
+import { PengajuanKredit } from "./pages/nasabah/PengajuanKredit.tsx";
+import { LoginNasabah } from "./pages/auth/LoginNasabah.tsx";
+import { RegisterNasabah } from "./pages/auth/RegisterNasabah.tsx";
+import { LoginPenyediaJasa } from "./pages/auth/LoginPenyediaJasa.tsx";
 
-// Pages - Kreditur
-import { LandingKreditur } from "./pages/kreditur/LandingKreditur.tsx";
-import { DashboardKreditur } from "./pages/kreditur/DashboardKreditur.tsx";
+// Pages - Penyedia Jasa
+import { LandingPenyediaJasa } from "./pages/kreditur/LandingPenyediaJasa.tsx";
+import { DashboardPenyediaJasa } from "./pages/kreditur/DashboardPenyediaJasa.tsx";
 import { DataPengajuan } from "./pages/kreditur/DataPengajuan.tsx";
-import { PengaturanSpk } from "./pages/kreditur/PengaturanSpk.tsx";
-import { PengaturanInstansi } from "./pages/kreditur/PengaturanInstansi.tsx";
+import { KalkulasiSpk } from "./pages/kreditur/KalkulasiSpk.tsx";
+import { PengaturanPenyediaJasa } from "./pages/kreditur/PengaturanPenyediaJasa.tsx";
 
 // Pages - Super Admin
 import { DashboardSuperAdmin } from "./pages/super-admin/DashboardSuperAdmin.tsx";
-import { ManageKreditur } from "./pages/super-admin/ManageKreditur.tsx";
+import { ManagePenyediaJasa } from "./pages/super-admin/ManagePenyediaJasa.tsx";
 import { ManageUsers } from "./pages/super-admin/ManageUsers.tsx";
-import { ManageDebitur } from "./pages/super-admin/ManageDebitur.tsx";
+import { ManageNasabah } from "./pages/super-admin/ManageNasabah.tsx";
+import { ManageSpk } from "./pages/super-admin/ManageSpk.tsx";
 
 const queryClient = new QueryClient();
 
@@ -41,58 +42,58 @@ function App() {
       <BrowserRouter>
         <Routes>
           
-          {/* Rute Publik & Debitur */}
+          {/* Rute Publik & Nasabah */}
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Beranda />} />
             <Route path="info" element={<InfoAplikasi />} />
+            <Route path="nasabah/penyedia-jasa" element={<DataPenyediaJasa />} />
             
-            {/* Rute khusus nasabah / debitur yang masuk ke sistem */}
-            <Route element={<ProtectedRoute allowedRoles={["DEBITUR"]} />}>
-              <Route path="debitur/kreditur" element={<DataKreditur />} />
-              <Route path="debitur/pengajuan" element={<PengajuanKredit />} />
-              <Route path="debitur/history" element={<HistoryPengajuan />} />
-              <Route path="debitur/edit-profile" element={<EditProfile />} />
+            {/* Rute khusus nasabah yang masuk ke sistem */}
+            <Route element={<ProtectedRoute allowedRoles={["NASABAH"]} />}>
+              <Route path="nasabah/pengajuan" element={<PengajuanKredit />} />
+              <Route path="nasabah/history" element={<HistoryPengajuan />} />
+              <Route path="nasabah/edit-profile" element={<EditProfile />} />
             </Route>
           </Route>
 
           {/* Rute Bebas (Tanpa MainLayout) */}
-          <Route path="/debitur/login" element={<LoginDebitur />} />
-          <Route path="/debitur/register" element={<RegisterDebitur />} />
-          <Route path="/kreditur/login" element={<LoginKreditur />} />
-          <Route path="/kreditur/landing" element={<LandingKreditur />} />
+          <Route path="/nasabah/login" element={<LoginNasabah />} />
+          <Route path="/nasabah/register" element={<RegisterNasabah />} />
+          <Route path="/penyedia-jasa/login" element={<LoginPenyediaJasa />} />
+          <Route path="/penyedia-jasa/landing" element={<LandingPenyediaJasa />} />
 
-          {/* Rute khusus admin kreditur yang terproteksi */}
+          {/* Rute khusus admin penyedia jasa yang terproteksi */}
           <Route element={<ProtectedRoute allowedRoles={["ADMIN", "SUPER ADMIN"]} />}>
             <Route 
-              path="/kreditur/dashboard" 
+              path="/penyedia-jasa/dashboard" 
               element={
-                <KrediturDashboardLayout>
-                  <DashboardKreditur />
-                </KrediturDashboardLayout>
+                <PenyediaJasaDashboardLayout>
+                  <DashboardPenyediaJasa />
+                </PenyediaJasaDashboardLayout>
               } 
             />
             <Route 
-              path="/kreditur/pengajuan" 
+              path="/penyedia-jasa/pengajuan" 
               element={
-                <KrediturDashboardLayout>
+                <PenyediaJasaDashboardLayout>
                   <DataPengajuan />
-                </KrediturDashboardLayout>
+                </PenyediaJasaDashboardLayout>
               } 
             />
             <Route 
-              path="/kreditur/settings/spk" 
+              path="/penyedia-jasa/kalkulasi" 
               element={
-                <KrediturDashboardLayout>
-                  <PengaturanSpk />
-                </KrediturDashboardLayout>
+                <PenyediaJasaDashboardLayout>
+                  <KalkulasiSpk />
+                </PenyediaJasaDashboardLayout>
               } 
             />
             <Route 
-              path="/kreditur/settings/instansi" 
+              path="/penyedia-jasa/settings/profil" 
               element={
-                <KrediturDashboardLayout>
-                  <PengaturanInstansi />
-                </KrediturDashboardLayout>
+                <PenyediaJasaDashboardLayout>
+                  <PengaturanPenyediaJasa />
+                </PenyediaJasaDashboardLayout>
               } 
             />
           </Route>
@@ -108,10 +109,18 @@ function App() {
               } 
             />
             <Route 
-              path="/super-admin/kreditur" 
+              path="/super-admin/penyedia-jasa" 
               element={
                 <SuperAdminDashboardLayout>
-                  <ManageKreditur />
+                  <ManagePenyediaJasa />
+                </SuperAdminDashboardLayout>
+              } 
+            />
+            <Route 
+              path="/super-admin/settings/spk" 
+              element={
+                <SuperAdminDashboardLayout>
+                  <ManageSpk />
                 </SuperAdminDashboardLayout>
               } 
             />
@@ -124,10 +133,10 @@ function App() {
               } 
             />
             <Route 
-              path="/super-admin/debitur" 
+              path="/super-admin/nasabah" 
               element={
                 <SuperAdminDashboardLayout>
-                  <ManageDebitur />
+                  <ManageNasabah />
                 </SuperAdminDashboardLayout>
               } 
             />

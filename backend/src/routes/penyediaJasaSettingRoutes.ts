@@ -1,12 +1,8 @@
 import { Router } from "express";
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddleware.js";
 import {
-  updateKrediturProfile,
-  getMyKrediturProfile,
-  getAspeks,
-  createAspek,
-  updateAspek,
-  deleteAspek,
+  updatePenyediaJasaProfile,
+  getMyPenyediaJasaProfile,
   getKriterias,
   createKriteria,
   updateKriteria,
@@ -15,31 +11,25 @@ import {
   createSubKriteria,
   updateSubKriteria,
   deleteSubKriteria,
-} from "../controllers/krediturSettingController.js";
+} from "../controllers/penyediaJasaSettingController.js";
 
 const router = Router();
 
-// Semua rute membutuhkan token JWT dan khusus role ADMIN (Lembaga Kreditur)
+// Semua rute membutuhkan token JWT dan role ADMIN atau SUPER ADMIN
 router.use(verifyToken);
-router.use(authorizeRoles("ADMIN"));
+router.use(authorizeRoles("ADMIN", "SUPER ADMIN"));
 
-// 1. Profil & Limit Kreditur
-router.get("/profile", getMyKrediturProfile);
-router.put("/profile", updateKrediturProfile);
+// 1. Profil & Limit Penyedia Jasa
+router.get("/profile", getMyPenyediaJasaProfile);
+router.put("/profile", updatePenyediaJasaProfile);
 
-// 2. CRUD Aspek
-router.get("/aspek", getAspeks);
-router.post("/aspek", createAspek);
-router.put("/aspek/:id", updateAspek);
-router.delete("/aspek/:id", deleteAspek);
-
-// 3. CRUD Kriteria
+// 2. CRUD Kriteria
 router.get("/kriteria", getKriterias);
 router.post("/kriteria", createKriteria);
 router.put("/kriteria/:id", updateKriteria);
 router.delete("/kriteria/:id", deleteKriteria);
 
-// 4. CRUD Sub-Kriteria
+// 3. CRUD Sub-Kriteria
 router.get("/sub-kriteria/:idKriteria", getSubKriterias);
 router.post("/sub-kriteria", createSubKriteria);
 router.put("/sub-kriteria/:id", updateSubKriteria);

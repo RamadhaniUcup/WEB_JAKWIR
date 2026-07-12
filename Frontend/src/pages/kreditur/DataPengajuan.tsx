@@ -1,30 +1,35 @@
 import { useState, type FC } from "react";
-import { useGetPengajuan, useUpdateApprovalStatus } from "../../hooks/useApi.js";
+import { useGetPengajuan } from "../../hooks/useApi.js";
 import { FormSurvey } from "../../components/kreditur/FormSurvey.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
 interface LivePengajuan {
   idPengajuan: number;
   tanggalPengajuan: string;
-  statusPeminjaman: "DIPROSES" | "DITERIMA" | "DITOLAK";
+  statusPeminjaman: "DIPROSES" | "MENUNGGU_SPK" | "DITERIMA" | "DITOLAK";
   jumlahKredit: string;
   lamaTenor: number;
-  debitur: {
-    namaDebitur: string;
+  nasabah: {
+    namaNasabah: string;
     email: string;
     telepon: string;
     nik: string;
     alamat: string;
   };
+  penilaian: Array<{
+    idPenilaian: number;
+    idSub: number;
+    subKriteria: {
+      idSub: number;
+      nilaiRating: number;
+      deskripsi: string;
+      kriteria: {
+        namaKriteria: string;
+        kodeKriteria: string;
+      };
+    };
+  }>;
   survey?: {
-    totalAset: string;
-    pendapatanBersih: string;
-    statusHunian: string;
-    statusPekerjaan: string;
-    jumlahTanggungan: number;
-    nilaiJaminanAset: string;
-    rasioHutang: string;
-    persentaseJaminan: string;
     skorProfileMatching: string;
     tingkatRisiko: "RENDAH" | "MENENGAH" | "TINGGI";
   } | null;
@@ -35,12 +40,10 @@ export const DataPengajuan: FC = () => {
   const [filterStatus, setFilterStatus] = useState("Semua");
   const [filterRisk, setFilterRisk] = useState("Semua");
   const [selectedPengajuan, setSelectedPengajuan] = useState<LivePengajuan | null>(null);
+  const [isEditingSurvey, setIsEditingSurvey] = useState(false);
 
   // Hook untuk mengambil list pengajuan
   const { data: pengajuanList, isLoading, refetch } = useGetPengajuan();
-  
-  // Hook untuk memproses status DITERIMA/DITOLAK
-  const updateApprovalStatusMutation = useUpdateApprovalStatus();
 
   // Helper formatting nominal Rupiah
   const formatRupiah = (val: string | number) => {
@@ -51,10 +54,12 @@ export const DataPengajuan: FC = () => {
     }).format(Number(val));
   };
 
-  const getStatusBadge = (status: "DIPROSES" | "DITERIMA" | "DITOLAK") => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "DIPROSES":
         return "bg-amber-500/10 text-amber-400 border-amber-500/20";
+      case "MENUNGGU_SPK":
+        return "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
       case "DITERIMA":
         return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
       case "DITOLAK":
@@ -64,8 +69,9 @@ export const DataPengajuan: FC = () => {
     }
   };
 
-  const translateStatus = (status: "DIPROSES" | "DITERIMA" | "DITOLAK") => {
-    if (status === "DIPROSES") return "Menunggu Verifikasi";
+  const translateStatus = (status: string) => {
+    if (status === "DIPROSES") return "Menunggu Survei";
+    if (status === "MENUNGGU_SPK") return "Menunggu SPK";
     if (status === "DITERIMA") return "Disetujui";
     return "Ditolak";
   };
@@ -73,7 +79,7 @@ export const DataPengajuan: FC = () => {
   // Filter logika data
   const filteredData = (pengajuanList || []).filter((item: LivePengajuan) => {
     const matchesSearch =
-      item.debitur.namaDebitur.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.nasabah?.namaNasabah?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `REQ-${item.idPengajuan}`.toLowerCase().includes(searchTerm.toLowerCase());
     
     const statusText = translateStatus(item.statusPeminjaman);
@@ -87,29 +93,13 @@ export const DataPengajuan: FC = () => {
     return matchesSearch && matchesStatus && matchesRisk;
   });
 
-  const handleApproveReject = (id: number, decision: "DITERIMA" | "DITOLAK") => {
-    updateApprovalStatusMutation.mutate(
-      { idPengajuan: id, statusPeminjaman: decision },
-      {
-        onSuccess: () => {
-          alert(`Status permohonan kredit berhasil diupdate ke: ${decision}`);
-          setSelectedPengajuan(null);
-          refetch();
-        },
-        onError: (err: any) => {
-          alert(`Gagal merubah status: ${err?.response?.data?.message || err.message}`);
-        },
-      }
-    );
-  };
-
   return (
     <div className="space-y-8 font-sans relative">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">Manajemen Data Pengajuan</h1>
         <p className="text-sm text-slate-400 mt-1">
-          Tinjau profil risiko, hitung kriteria Profile Matching, dan proses persetujuan kredit calon debitur.
+          Tinjau pengajuan pinjaman nasabah, input survey lapangan, dan pantau keputusan kelayakan SPK.
         </p>
       </div>
 
@@ -118,10 +108,10 @@ export const DataPengajuan: FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Pencarian */}
           <div className="flex flex-col space-y-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cari Debitur</label>
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cari Nasabah</label>
             <input
               type="text"
-              placeholder="Cari ID atau Nama Debitur..."
+              placeholder="Cari ID atau Nama Nasabah..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-white/[0.03] border border-white/[0.1] text-white focus:border-indigo-500 focus:outline-none rounded-xl px-4 py-2.5 text-sm transition"
@@ -137,8 +127,9 @@ export const DataPengajuan: FC = () => {
               className="bg-[#0f172a] border border-white/[0.1] text-white focus:border-indigo-500 focus:outline-none rounded-xl px-4 py-2.5 text-sm transition cursor-pointer"
             >
               <option value="Semua">Semua Status</option>
-              <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
-              <option value="Disetujui">Disetujui</option>
+              <option value="Menunggu Survei">Menunggu Survei</option>
+              <option value="Menunggu SPK">Menunggu SPK</option>
+              <option value="Disetujui">Disetujui (Diterima)</option>
               <option value="Ditolak">Ditolak</option>
             </select>
           </div>
@@ -181,7 +172,7 @@ export const DataPengajuan: FC = () => {
               <thead className="bg-white/[0.02] text-xs uppercase text-slate-500 font-semibold tracking-wider border-b border-white/10">
                 <tr>
                   <th className="px-6 py-4">ID Req</th>
-                  <th className="px-6 py-4">Calon Debitur</th>
+                  <th className="px-6 py-4">Nama Nasabah</th>
                   <th className="px-6 py-4">Tanggal Masuk</th>
                   <th className="px-6 py-4">Nominal & Tenor</th>
                   <th className="px-6 py-4">Skor / Risiko</th>
@@ -201,14 +192,14 @@ export const DataPengajuan: FC = () => {
                     return (
                       <tr key={row.idPengajuan} className="hover:bg-white/[0.01] transition-colors group">
                         <td className="px-6 py-4 font-mono text-xs text-slate-400 whitespace-nowrap">REQ-{row.idPengajuan}</td>
-                        <td className="px-6 py-4 font-bold text-white whitespace-nowrap">{row.debitur.namaDebitur}</td>
+                        <td className="px-6 py-4 font-bold text-white whitespace-nowrap">{row.nasabah?.namaNasabah}</td>
                         <td className="px-6 py-4 text-slate-400 text-xs whitespace-nowrap">{formattedDate}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-bold text-emerald-400">{formatRupiah(row.jumlahKredit)}</div>
                           <div className="text-[10px] text-slate-500 mt-0.5">{row.lamaTenor} Bulan</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {row.survey ? (
+                          {row.survey && row.survey.skorProfileMatching ? (
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded">
                                 {row.survey.skorProfileMatching}
@@ -226,7 +217,9 @@ export const DataPengajuan: FC = () => {
                               </span>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-500">Belum disurvei</span>
+                            <span className="text-xs text-slate-500 font-semibold italic text-slate-400">
+                              {row.statusPeminjaman === "MENUNGGU_SPK" ? "Menunggu SPK" : "Belum disurvei"}
+                            </span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -236,7 +229,10 @@ export const DataPengajuan: FC = () => {
                         </td>
                         <td className="px-6 py-4 text-center whitespace-nowrap">
                           <button
-                            onClick={() => setSelectedPengajuan(row)}
+                            onClick={() => {
+                              setSelectedPengajuan(row);
+                              setIsEditingSurvey(false);
+                            }}
                             className="px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-xs font-bold text-indigo-400 hover:bg-indigo-600 hover:border-indigo-500 hover:text-white transition cursor-pointer"
                           >
                             Tinjau Berkas
@@ -277,31 +273,31 @@ export const DataPengajuan: FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Kolom Kiri: Profil & KTP */}
+              {/* Kolom Kiri: Profil Nasabah */}
               <div className="space-y-6">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Identitas Calon Debitur</h4>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Identitas Calon Nasabah</h4>
                   <table className="w-full text-xs text-slate-300 space-y-2">
                     <tbody>
                       <tr>
-                        <td className="py-1.5 text-slate-500 w-1/3">Nama</td>
-                        <td className="py-1.5 font-bold text-white">{selectedPengajuan.debitur.namaDebitur}</td>
+                        <td className="py-1.5 text-slate-500 w-1/3">Nama Nasabah</td>
+                        <td className="py-1.5 font-bold text-white">{selectedPengajuan.nasabah?.namaNasabah}</td>
                       </tr>
                       <tr>
                         <td className="py-1.5 text-slate-500">Email</td>
-                        <td className="py-1.5 font-semibold text-slate-300">{selectedPengajuan.debitur.email}</td>
+                        <td className="py-1.5 font-semibold text-slate-300">{selectedPengajuan.nasabah?.email}</td>
                       </tr>
                       <tr>
                         <td className="py-1.5 text-slate-500">Telepon</td>
-                        <td className="py-1.5 text-slate-300">{selectedPengajuan.debitur.telepon}</td>
+                        <td className="py-1.5 text-slate-300">{selectedPengajuan.nasabah?.telepon}</td>
                       </tr>
                       <tr>
                         <td className="py-1.5 text-slate-500">NIK (Decrypted)</td>
-                        <td className="py-1.5 text-slate-300 font-mono">{selectedPengajuan.debitur.nik}</td>
+                        <td className="py-1.5 text-slate-300 font-mono">{selectedPengajuan.nasabah?.nik}</td>
                       </tr>
                       <tr>
                         <td className="py-1.5 text-slate-500">Alamat Rumah</td>
-                        <td className="py-1.5 text-slate-300 leading-relaxed">{selectedPengajuan.debitur.alamat}</td>
+                        <td className="py-1.5 text-slate-300 leading-relaxed">{selectedPengajuan.nasabah?.alamat}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -321,22 +317,12 @@ export const DataPengajuan: FC = () => {
                   </div>
                 </div>
 
-                {/* Tampilkan Kalkulasi Rasio & Keputusan jika survey sudah diinput */}
-                {selectedPengajuan.survey && (
+                {/* Tampilkan Kalkulasi & Keputusan SPK otomatis jika survey sudah diinput */}
+                {selectedPengajuan.survey && selectedPengajuan.survey.skorProfileMatching && (
                   <div className="border-t border-white/5 pt-4 space-y-4">
                     <GlassCard className="p-4 bg-white/[0.02] border border-indigo-500/20" hoverEffect={false}>
-                      <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3">Kalkulasi & Analisis Sistem</h4>
+                      <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3">Hasil Evaluasi SPK</h4>
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Rasio Hutang (DTI)</p>
-                          <p className="text-sm font-bold text-slate-200">{selectedPengajuan.survey.rasioHutang}%</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-slate-500 font-semibold uppercase">Kecukupan Jaminan</p>
-                          <p className={`text-xs font-extrabold ${Number(selectedPengajuan.survey.persentaseJaminan) >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                            {selectedPengajuan.survey.persentaseJaminan}% / {Number(selectedPengajuan.survey.persentaseJaminan) >= 100 ? "Overcollateralized" : "Undercollateralized"}
-                          </p>
-                        </div>
                         <div>
                           <p className="text-[10px] text-slate-500 font-semibold uppercase">Skor Akhir SPK</p>
                           <p className="text-lg font-extrabold text-indigo-400">{selectedPengajuan.survey.skorProfileMatching} / 5.00</p>
@@ -354,68 +340,57 @@ export const DataPengajuan: FC = () => {
                       </div>
                     </GlassCard>
 
-                    {/* Tombol Keputusan Pengajuan */}
-                    {selectedPengajuan.statusPeminjaman === "DIPROSES" && (
-                      <div className="flex gap-4 pt-2">
-                        <button
-                          onClick={() => handleApproveReject(selectedPengajuan.idPengajuan, "DITERIMA")}
-                          disabled={updateApprovalStatusMutation.isPending}
-                          className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs transition cursor-pointer"
-                        >
-                          Setujui Kredit
-                        </button>
-                        <button
-                          onClick={() => handleApproveReject(selectedPengajuan.idPengajuan, "DITOLAK")}
-                          disabled={updateApprovalStatusMutation.isPending}
-                          className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-slate-950 font-bold rounded-xl text-xs transition cursor-pointer"
-                        >
-                          Tolak Kredit
-                        </button>
-                      </div>
-                    )}
+                    <div className="p-4 rounded-xl bg-white/2 border border-white/5 text-center text-xs">
+                      <span className="text-slate-400 font-medium">Status Keputusan Kelayakan: </span>
+                      <span className={`font-bold ${
+                        selectedPengajuan.statusPeminjaman === "DITERIMA" ? "text-emerald-400" : "text-red-400"
+                      }`}>
+                        {translateStatus(selectedPengajuan.statusPeminjaman)}
+                      </span>
+                      <p className="text-[10px] text-slate-500 mt-1 italic leading-relaxed">
+                        Keputusan ditentukan otomatis berdasarkan ketentuan batas kelayakan SPK (Skor &ge; 3.01 diterima, &le; 3.00 ditolak).
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Kolom Kanan: Formulir Survei Lapangan */}
+              {/* Kolom Rerata: Hasil Survey Lapangan */}
               <div>
-                {!selectedPengajuan.survey ? (
+                {(selectedPengajuan.penilaian && selectedPengajuan.penilaian.length === 0) || isEditingSurvey ? (
                   <FormSurvey 
                     idPengajuan={selectedPengajuan.idPengajuan} 
                     onSuccessCallback={() => {
                       setSelectedPengajuan(null);
+                      setIsEditingSurvey(false);
                       refetch();
                     }}
                   />
                 ) : (
-                  <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
-                    <h3 className="text-sm font-bold text-white">Detail Survey Lapangan (Tersimpan)</h3>
-                    <div className="space-y-3 text-xs">
-                      <div className="flex justify-between py-1 border-b border-white/5">
-                        <span className="text-slate-500">Total Aset</span>
-                        <span className="text-slate-300 font-semibold">{formatRupiah(selectedPengajuan.survey.totalAset)}</span>
-                      </div>
-                      <div className="flex justify-between py-1 border-b border-white/5">
-                        <span className="text-slate-500">Pendapatan Bersih</span>
-                        <span className="text-slate-300 font-semibold">{formatRupiah(selectedPengajuan.survey.pendapatanBersih)}</span>
-                      </div>
-                      <div className="flex justify-between py-1 border-b border-white/5">
-                        <span className="text-slate-500">Status Pekerjaan</span>
-                        <span className="text-slate-300 font-semibold">{selectedPengajuan.survey.statusPekerjaan}</span>
-                      </div>
-                      <div className="flex justify-between py-1 border-b border-white/5">
-                        <span className="text-slate-500">Status Tempat Tinggal</span>
-                        <span className="text-slate-300 font-semibold">{selectedPengajuan.survey.statusHunian}</span>
-                      </div>
-                      <div className="flex justify-between py-1 border-b border-white/5">
-                        <span className="text-slate-500">Jumlah Tanggungan</span>
-                        <span className="text-slate-300 font-semibold">{selectedPengajuan.survey.jumlahTanggungan} Orang</span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span className="text-slate-500">Nilai Jaminan Aset</span>
-                        <span className="text-slate-300 font-semibold">{formatRupiah(selectedPengajuan.survey.nilaiJaminanAset)}</span>
+                  <div className="space-y-6">
+                    <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+                      <h3 className="text-sm font-bold text-white">Detail Survey Lapangan (Tersimpan)</h3>
+                      <div className="space-y-3 text-xs max-h-[350px] overflow-y-auto pr-1">
+                        {selectedPengajuan.penilaian?.map((pen: any) => (
+                          <div key={pen.idPenilaian} className="flex flex-col gap-1 py-2 border-b border-white/5">
+                            <span className="text-slate-500 font-bold uppercase text-[9px] tracking-wider">
+                              {pen.subKriteria?.kriteria?.namaKriteria} ({pen.subKriteria?.kriteria?.kodeKriteria})
+                            </span>
+                            <span className="text-white font-semibold">
+                              Rating {pen.subKriteria?.nilaiRating} - {pen.subKriteria?.deskripsi}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
+
+                    {/* Tombol Update/Edit Survey */}
+                    <button
+                      onClick={() => setIsEditingSurvey(true)}
+                      className="w-full py-3 bg-white/5 border border-white/10 hover:border-indigo-500 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                      Ubah Survey Lapangan
+                    </button>
                   </div>
                 )}
               </div>
@@ -426,3 +401,4 @@ export const DataPengajuan: FC = () => {
     </div>
   );
 };
+export default DataPengajuan;

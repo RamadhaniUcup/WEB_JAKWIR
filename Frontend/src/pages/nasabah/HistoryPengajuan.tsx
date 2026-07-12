@@ -5,17 +5,15 @@ import { GlassCard } from "../../components/common/glasscard.js";
 interface HistoryItem {
   idPengajuan: number;
   tanggalPengajuan: string;
-  statusPeminjaman: "DIPROSES" | "DITERIMA" | "DITOLAK";
+  statusPeminjaman: "DIPROSES" | "MENUNGGU_SPK" | "DITERIMA" | "DITOLAK";
   jumlahKredit: string;
   lamaTenor: number;
-  kreditur: {
-    namaPerusahaan: string;
+  penyediaJasa: {
+    namaPenyediaJasa: string;
   };
   survey?: {
     skorProfileMatching: string;
     tingkatRisiko: "RENDAH" | "MENENGAH" | "TINGGI";
-    rasioHutang?: string;
-    persentaseJaminan?: string;
   } | null;
 }
 
@@ -31,10 +29,12 @@ export const HistoryPengajuan: FC = () => {
     }).format(Number(val));
   };
 
-  const getStatusBadge = (status: "DIPROSES" | "DITERIMA" | "DITOLAK") => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "DIPROSES":
         return "bg-amber-500/10 text-amber-400 border-amber-500/20";
+      case "MENUNGGU_SPK":
+        return "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
       case "DITERIMA":
         return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
       case "DITOLAK":
@@ -44,9 +44,10 @@ export const HistoryPengajuan: FC = () => {
     }
   };
 
-  const translateStatus = (status: "DIPROSES" | "DITERIMA" | "DITOLAK") => {
-    if (status === "DIPROSES") return "Dalam Proses Verifikasi";
-    if (status === "DITERIMA") return "Disetujui / Diterima";
+  const translateStatus = (status: string) => {
+    if (status === "DIPROSES") return "Menunggu Survei";
+    if (status === "MENUNGGU_SPK") return "Menunggu SPK";
+    if (status === "DITERIMA") return "Disetujui (Diterima)";
     return "Ditolak";
   };
 
@@ -81,11 +82,11 @@ export const HistoryPengajuan: FC = () => {
                       {translateStatus(item.statusPeminjaman)}
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-white">{item.kreditur.namaPerusahaan}</h3>
+                  <h3 className="text-lg font-bold text-white">{item.penyediaJasa?.namaPenyediaJasa}</h3>
                   <p className="text-xs text-slate-400 mt-1">Diajukan pada: {formattedDate} • Tenor {item.lamaTenor} Bulan</p>
                   
                   {/* Status SPK Profile Matching jika survey sudah diinput */}
-                  {item.survey && (
+                  {item.survey && item.survey.skorProfileMatching && (
                     <div className="mt-4 flex flex-wrap gap-2 items-center">
                       <span className="text-[10px] bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold px-2 py-1 rounded-lg">
                         Skor SPK: {item.survey.skorProfileMatching}
@@ -99,16 +100,6 @@ export const HistoryPengajuan: FC = () => {
                       }`}>
                         Risiko: {item.survey.tingkatRisiko}
                       </span>
-                      {item.survey.rasioHutang && (
-                        <span className="text-[10px] bg-white/5 border border-white/10 text-slate-300 px-2 py-1 rounded-lg font-semibold">
-                          DTI: {item.survey.rasioHutang}%
-                        </span>
-                      )}
-                      {item.survey.persentaseJaminan && (
-                        <span className="text-[10px] bg-white/5 border border-white/10 text-slate-300 px-2 py-1 rounded-lg font-semibold">
-                          Jaminan: {item.survey.persentaseJaminan}% / {Number(item.survey.persentaseJaminan) >= 100 ? "Overcollateralized" : "Undercollateralized"}
-                        </span>
-                      )}
                     </div>
                   )}
                 </div>
@@ -125,3 +116,4 @@ export const HistoryPengajuan: FC = () => {
     </div>
   );
 };
+export default HistoryPengajuan;

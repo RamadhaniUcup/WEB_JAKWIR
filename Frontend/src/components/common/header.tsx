@@ -23,7 +23,7 @@ export const Header: FC = () => {
   // Data menu disesuaikan dengan rute aplikasi JAKWIR
   const menuItems = [
     { label: "Beranda", href: "/" },
-    { label: "Daftar Kreditur", href: "/debitur/kreditur" },
+    { label: "Penyedia Jasa", href: "/nasabah/penyedia-jasa" },
     { label: "Info Aplikasi", href: "/info" },
   ];
 
@@ -117,7 +117,7 @@ export const Header: FC = () => {
               <div className="relative w-full md:w-auto flex flex-col md:flex-row items-center gap-4">
                 {/* Ajukan Sekarang button */}
                 <Link
-                  to="/debitur/pengajuan"
+                  to="/nasabah/pengajuan"
                   onClick={() => setIsMenuOpen(false)}
                   className="w-full md:w-auto bg-linear-to-r from-indigo-500 to-cyan-500 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_rgba(99,102,241,0.6)] transition-all cursor-pointer text-center"
                 >
@@ -131,9 +131,9 @@ export const Header: FC = () => {
                     className="w-full md:w-auto flex items-center justify-center gap-3 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] transition-all duration-300 cursor-pointer"
                   >
                     <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center border border-indigo-400 overflow-hidden">
-                      <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.namaDebitur || user?.username || "User")}&background=6366f1&color=fff&size=64`} alt="Profil" className="w-full h-full object-cover" />
+                      <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.namaNasabah || user?.username || "User")}&background=6366f1&color=fff&size=64`} alt="Profil" className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-sm font-semibold text-slate-300">{user?.namaDebitur || user?.username || "Pengguna"}</span>
+                    <span className="text-sm font-semibold text-slate-300">{user?.namaNasabah || user?.username || "Pengguna"}</span>
                     <svg
                       className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`}
                       fill="none"
@@ -154,10 +154,10 @@ export const Header: FC = () => {
                       <div className="absolute right-0 mt-3 w-full md:w-56 rounded-2xl backdrop-blur-xl bg-[#0f172a]/95 border border-white/[0.08] shadow-2xl p-2 space-y-1 z-20">
                         <div className="px-4 py-2.5 border-b border-white/5 mb-1">
                           <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Peran Pengguna</p>
-                          <p className="text-xs text-indigo-400 font-bold mt-0.5">Debitur (Nasabah)</p>
+                          <p className="text-xs text-indigo-400 font-bold mt-0.5">Nasabah</p>
                         </div>
                         <Link
-                          to="/debitur/edit-profile"
+                          to="/nasabah/edit-profile"
                           onClick={() => {
                             setIsProfileOpen(false);
                             setIsMenuOpen(false);
@@ -167,7 +167,7 @@ export const Header: FC = () => {
                           👤 Pengaturan Profil
                         </Link>
                         <Link
-                          to="/debitur/history"
+                          to="/nasabah/history"
                           onClick={() => {
                             setIsProfileOpen(false);
                             setIsMenuOpen(false);
@@ -194,18 +194,11 @@ export const Header: FC = () => {
             ) : (
               <>
                 <Link
-                  to="/debitur/login"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="text-white hover:text-gray-300 font-medium text-sm transition-colors py-3 md:py-0 w-full md:w-auto text-center"
-                >
-                  Masuk Nasabah
-                </Link>
-                <Link
-                  to="/kreditur/login"
+                  to="/nasabah/login"
                   onClick={() => setIsMenuOpen(false)}
                   className="px-6 py-2.5 bg-linear-to-r from-indigo-500 to-cyan-500 text-slate-950 font-bold text-sm rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_rgba(99,102,241,0.6)] transition-all cursor-pointer text-center"
                 >
-                  Portal Mitra
+                  Masuk Nasabah
                 </Link>
               </>
             )}
@@ -215,5 +208,4 @@ export const Header: FC = () => {
     </header>
   );
 };
-
 export default Header;

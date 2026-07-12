@@ -4,7 +4,7 @@ import {
   useCreateSuperAdminUser,
   useUpdateSuperAdminUser,
   useDeleteSuperAdminUser,
-  useGetSuperAdminKrediturs,
+  useGetSuperAdminPenyediaJasas,
 } from "../../hooks/useApi.js";
 import { GlassCard } from "../../components/common/glasscard.js";
 
@@ -13,15 +13,15 @@ interface UserRow {
   username: string;
   email: string;
   role: "ADMIN" | "SUPER_ADMIN";
-  idKreditur: number | null;
-  kreditur?: {
-    namaPerusahaan: string;
+  idPenyediaJasa: number | null;
+  penyediaJasa?: {
+    namaPenyediaJasa: string;
   } | null;
 }
 
 export const ManageUsers: FC = () => {
   const { data: users, isLoading } = useGetSuperAdminUsers();
-  const { data: krediturs } = useGetSuperAdminKrediturs();
+  const { data: penyediaJasas } = useGetSuperAdminPenyediaJasas();
 
   const createMutation = useCreateSuperAdminUser();
   const updateMutation = useUpdateSuperAdminUser();
@@ -33,7 +33,7 @@ export const ManageUsers: FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"ADMIN" | "SUPER_ADMIN">("ADMIN");
-  const [idKreditur, setIdKreditur] = useState<string>("");
+  const [idPenyediaJasa, setIdPenyediaJasa] = useState<string>("");
 
   const [isOpenForm, setIsOpenForm] = useState(false);
 
@@ -43,7 +43,7 @@ export const ManageUsers: FC = () => {
     setEmail("");
     setPassword("");
     setRole("ADMIN");
-    setIdKreditur("");
+    setIdPenyediaJasa("");
     setIsOpenForm(false);
   };
 
@@ -53,7 +53,7 @@ export const ManageUsers: FC = () => {
     setEmail(u.email);
     setPassword(""); // Jangan tampilkan password lama demi keamanan
     setRole(u.role);
-    setIdKreditur(u.idKreditur ? String(u.idKreditur) : "");
+    setIdPenyediaJasa(u.idPenyediaJasa ? String(u.idPenyediaJasa) : "");
     setIsOpenForm(true);
   };
 
@@ -64,7 +64,7 @@ export const ManageUsers: FC = () => {
       username,
       email,
       role,
-      idKreditur: idKreditur ? Number(idKreditur) : null,
+      idPenyediaJasa: idPenyediaJasa ? Number(idPenyediaJasa) : null,
     };
     if (password) payload.password = password;
 
@@ -186,18 +186,18 @@ export const ManageUsers: FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Lembaga Pembiayaan</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Penyedia Jasa</label>
                   <select
-                    value={idKreditur}
-                    onChange={(e) => setIdKreditur(e.target.value)}
+                    value={idPenyediaJasa}
+                    onChange={(e) => setIdPenyediaJasa(e.target.value)}
                     disabled={role === "SUPER_ADMIN"}
                     className="w-full px-4 py-2.5 bg-[#0f172a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 text-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     required={role === "ADMIN"}
                   >
-                    <option value="">-- Hubungkan Kreditur --</option>
-                    {krediturs?.map((k) => (
-                      <option key={k.idKreditur} value={k.idKreditur}>
-                        {k.namaPerusahaan}
+                    <option value="">-- Hubungkan Penyedia Jasa --</option>
+                    {penyediaJasas?.map((k) => (
+                      <option key={k.idPenyediaJasa} value={k.idPenyediaJasa}>
+                        {k.namaPenyediaJasa}
                       </option>
                     ))}
                   </select>
@@ -236,7 +236,7 @@ export const ManageUsers: FC = () => {
                   <th className="px-6 py-4">Username</th>
                   <th className="px-6 py-4">Email</th>
                   <th className="px-6 py-4">Peran</th>
-                  <th className="px-6 py-4">Mitra Kreditur</th>
+                  <th className="px-6 py-4">Penyedia Jasa</th>
                   <th className="px-6 py-4 text-center">Aksi</th>
                 </tr>
               </thead>
@@ -257,7 +257,7 @@ export const ManageUsers: FC = () => {
                       {row.role === "SUPER_ADMIN" ? (
                         <span className="text-slate-500 italic">Semua Lembaga</span>
                       ) : (
-                        row.kreditur?.namaPerusahaan || <span className="text-red-400">Putus Hubungan</span>
+                        row.penyediaJasa?.namaPenyediaJasa || <span className="text-red-400">Putus Hubungan</span>
                       )}
                     </td>
                     <td className="px-6 py-4">

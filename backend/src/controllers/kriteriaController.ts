@@ -3,12 +3,10 @@ import { prisma } from "../db.js";
 import { AuthenticatedRequest } from "../middlewares/authMiddleware.js";
 
 /**
- * Mendapatkan semua Kriteria
+ * Mendapatkan semua Kriteria (Mendukung filter idPenyediaJasa)
  */
 export async function getAllKriteria(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    // Admin Mitra hanya bisa melihat kriteria dari Kreditur mereka sendiri
-    // sedangkan Super Admin bisa melihat semuanya.
     const user = req.user;
     if (!user) {
       res.status(401).json({ message: "Unauthorized." });
@@ -17,17 +15,22 @@ export async function getAllKriteria(req: AuthenticatedRequest, res: Response): 
 
     let kriteria;
     if (user.role === "SUPER ADMIN") {
-      kriteria = await prisma.kriteria.findMany({
-        include: { aspek: true },
-      });
-    } else {
-      // Role ADMIN, filter berdasarkan idKreditur
-      const whereClause = user.idKreditur 
-        ? { aspek: { idKreditur: user.idKreditur } }
+      const { idPenyediaJasa } = req.query;
+      const whereClause = idPenyediaJasa 
+        ? { idPenyediaJasa: Number(idPenyediaJasa) }
         : {};
       kriteria = await prisma.kriteria.findMany({
         where: whereClause,
-        include: { aspek: true },
+        include: { subKriteria: true },
+      });
+    } else {
+      // Role ADMIN, filter berdasarkan idPenyediaJasa miliknya sendiri
+      const whereClause = user.idPenyediaJasa 
+        ? { idPenyediaJasa: user.idPenyediaJasa }
+        : {};
+      kriteria = await prisma.kriteria.findMany({
+        where: whereClause,
+        include: { subKriteria: true },
       });
     }
 
@@ -46,7 +49,7 @@ export async function getKriteriaById(req: AuthenticatedRequest, res: Response):
     const id = Number(req.params.id);
     const kriteria = await prisma.kriteria.findUnique({
       where: { idKriteria: id },
-      include: { aspek: true, subKriteria: true },
+      include: { subKriteria: true },
     });
 
     if (!kriteria) {
@@ -55,7 +58,7 @@ export async function getKriteriaById(req: AuthenticatedRequest, res: Response):
     }
 
     // Cek otorisasi data jika ADMIN (bukan SUPER ADMIN)
-    if (req.user?.role === "ADMIN" && kriteria.aspek.idKreditur !== req.user.idKreditur) {
+    if (req.user?.role === "ADMIN" && kriteria.idPenyediaJasa !== req.user.idPenyediaJasa) {
       res.status(403).json({ message: "Forbidden. Anda tidak memiliki akses ke kriteria instansi lain." });
       return;
     }
@@ -68,33 +71,32 @@ export async function getKriteriaById(req: AuthenticatedRequest, res: Response):
 }
 
 /**
- * Membuat Kriteria baru (Hanya untuk Admin / Super Admin)
+ * Membuat Kriteria baru (Hanya untuk Super Admin)
  */
 export async function createKriteria(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const { idAspek, kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor } = req.body;
+    if (req.user?.role !== "SUPER ADMIN") {
+      res.status(403).json({ message: "Forbidden. Hanya Super Admin yang dapat membuat kriteria." });
+      return;
+    }
 
-    if (!idAspek || !kodeKriteria || !namaKriteria || !nilaiTarget || !jenisFaktor) {
+    const { idPenyediaJasa, kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor } = req.body;
+
+    if (!idPenyediaJasa || !kodeKriteria || !namaKriteria || !nilaiTarget || !jenisFaktor) {
       res.status(400).json({ message: "Data kriteria tidak lengkap." });
       return;
     }
 
-    // Verifikasi aspek yang dituju
-    const aspek = await prisma.aspek.findUnique({ where: { idAspek: Number(idAspek) } });
-    if (!aspek) {
-      res.status(404).json({ message: "Aspek tujuan tidak ditemukan." });
-      return;
-    }
-
-    // Jika ADMIN, pastikan aspek tersebut milik kreditur yang sama
-    if (req.user?.role === "ADMIN" && aspek.idKreditur !== req.user.idKreditur) {
-      res.status(403).json({ message: "Forbidden. Anda tidak dapat menambahkan kriteria pada aspek instansi lain." });
+    // Verifikasi penyedia jasa yang dituju
+    const pj = await prisma.penyediaJasa.findUnique({ where: { idPenyediaJasa: Number(idPenyediaJasa) } });
+    if (!pj) {
+      res.status(404).json({ message: "Penyedia Jasa tujuan tidak ditemukan." });
       return;
     }
 
     const newKriteria = await prisma.kriteria.create({
       data: {
-        idAspek: Number(idAspek),
+        idPenyediaJasa: Number(idPenyediaJasa),
         kodeKriteria,
         namaKriteria,
         nilaiTarget: Number(nilaiTarget),
@@ -110,26 +112,24 @@ export async function createKriteria(req: AuthenticatedRequest, res: Response): 
 }
 
 /**
- * Memperbarui Kriteria
+ * Memperbarui Kriteria (Hanya untuk Super Admin)
  */
 export async function updateKriteria(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
+    if (req.user?.role !== "SUPER ADMIN") {
+      res.status(403).json({ message: "Forbidden. Hanya Super Admin yang dapat merubah kriteria." });
+      return;
+    }
+
     const id = Number(req.params.id);
     const { kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor } = req.body;
 
     const existingKriteria = await prisma.kriteria.findUnique({
       where: { idKriteria: id },
-      include: { aspek: true },
     });
 
     if (!existingKriteria) {
       res.status(404).json({ message: "Kriteria tidak ditemukan." });
-      return;
-    }
-
-    // Batasan otorisasi ADMIN
-    if (req.user?.role === "ADMIN" && existingKriteria.aspek.idKreditur !== req.user.idKreditur) {
-      res.status(403).json({ message: "Forbidden. Tidak memiliki akses mengubah data ini." });
       return;
     }
 
@@ -152,25 +152,23 @@ export async function updateKriteria(req: AuthenticatedRequest, res: Response): 
 }
 
 /**
- * Menghapus Kriteria (Cascade delete terpicu di database/Prisma)
+ * Menghapus Kriteria (Hanya untuk Super Admin)
  */
 export async function deleteKriteria(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
+    if (req.user?.role !== "SUPER ADMIN") {
+      res.status(403).json({ message: "Forbidden. Hanya Super Admin yang dapat menghapus kriteria." });
+      return;
+    }
+
     const id = Number(req.params.id);
 
     const existingKriteria = await prisma.kriteria.findUnique({
       where: { idKriteria: id },
-      include: { aspek: true },
     });
 
     if (!existingKriteria) {
       res.status(404).json({ message: "Kriteria tidak ditemukan." });
-      return;
-    }
-
-    // Batasan otorisasi ADMIN
-    if (req.user?.role === "ADMIN" && existingKriteria.aspek.idKreditur !== req.user.idKreditur) {
-      res.status(403).json({ message: "Forbidden. Tidak memiliki akses menghapus data ini." });
       return;
     }
 
