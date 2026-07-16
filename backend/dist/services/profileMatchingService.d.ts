@@ -21,7 +21,6 @@ export interface ProfileMatchingBreakdown {
     detailKriteria: GapCalculation[];
     skorAkhir: number;
     tingkatRisiko: "RENDAH" | "MENENGAH" | "TINGGI";
-    statusPeminjaman: "DITERIMA" | "DITOLAK";
 }
 /**
  * Menentukan tingkat risiko berdasarkan skor akhir Profile Matching.

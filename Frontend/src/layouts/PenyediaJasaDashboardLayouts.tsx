@@ -65,6 +65,11 @@ export const PenyediaJasaDashboardLayout: FC<LayoutProps> = ({ children }) => {
             )}
           </Link>
 
+          <Link to="/penyedia-jasa/laporan" 
+            className={`flex items-center px-4 py-3 rounded-xl transition-all ${isActive("/penyedia-jasa/laporan") ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+            <span className="text-sm font-semibold flex-1">Laporan Hasil SPK</span>
+          </Link>
+          
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider pt-6 mb-2 px-2">Pengaturan</div>
 
           <Link to="/penyedia-jasa/settings/profil" 

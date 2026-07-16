@@ -73,29 +73,6 @@ export async function calculateProfileMatching(idPengajuan) {
     const skorAkhirRaw = (nilaiCF * (persentaseCf / 100)) + (nilaiSF * (persentaseSf / 100));
     const finalScore = Math.round(skorAkhirRaw * 100) / 100;
     const tingkatRisiko = determineRisk(finalScore);
-    // 1. Simpan skor & risiko ke SurveyLapangan
-    await prisma.surveyLapangan.upsert({
-        where: { idPengajuan },
-        update: {
-            skorProfileMatching: finalScore,
-            tingkatRisiko,
-        },
-        create: {
-            idPengajuan,
-            skorProfileMatching: finalScore,
-            tingkatRisiko,
-        }
-    });
-    // 2. Rule Auto-Decision Status Peminjaman:
-    // - Skor >= 3.01 (covers 3.01 - 5.0) -> DITERIMA
-    // - Skor <= 3.0 (covers < 2.0 and 2.0 - 3.0) -> DITOLAK
-    const statusPeminjaman = finalScore >= 3.01 ? "DITERIMA" : "DITOLAK";
-    await prisma.pengajuan.update({
-        where: { idPengajuan },
-        data: {
-            statusPeminjaman
-        }
-    });
     return {
         idPengajuan: pengajuan.idPengajuan,
         namaNasabah: pengajuan.nasabah.namaNasabah,
@@ -109,7 +86,6 @@ export async function calculateProfileMatching(idPengajuan) {
         detailKriteria,
         skorAkhir: finalScore,
         tingkatRisiko,
-        statusPeminjaman,
     };
 }
 //# sourceMappingURL=profileMatchingService.js.map

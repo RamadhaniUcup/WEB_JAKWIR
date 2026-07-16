@@ -72,7 +72,7 @@ export async function createKriteria(req, res) {
             res.status(403).json({ message: "Forbidden. Hanya Super Admin yang dapat membuat kriteria." });
             return;
         }
-        const { idPenyediaJasa, kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor } = req.body;
+        const { idPenyediaJasa, kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor, bobot, jenisAtribut } = req.body;
         if (!idPenyediaJasa || !kodeKriteria || !namaKriteria || !nilaiTarget || !jenisFaktor) {
             res.status(400).json({ message: "Data kriteria tidak lengkap." });
             return;
@@ -90,6 +90,8 @@ export async function createKriteria(req, res) {
                 namaKriteria,
                 nilaiTarget: Number(nilaiTarget),
                 jenisFaktor: jenisFaktor,
+                bobot: bobot !== undefined ? Number(bobot) : 0,
+                jenisAtribut: jenisAtribut || "BENEFIT",
             },
         });
         res.status(201).json({ message: "Kriteria berhasil dibuat.", data: newKriteria });
@@ -109,7 +111,7 @@ export async function updateKriteria(req, res) {
             return;
         }
         const id = Number(req.params.id);
-        const { kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor } = req.body;
+        const { kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor, bobot, jenisAtribut } = req.body;
         const existingKriteria = await prisma.kriteria.findUnique({
             where: { idKriteria: id },
         });
@@ -126,6 +128,10 @@ export async function updateKriteria(req, res) {
             updateData.nilaiTarget = Number(nilaiTarget);
         if (jenisFaktor !== undefined)
             updateData.jenisFaktor = jenisFaktor;
+        if (bobot !== undefined)
+            updateData.bobot = Number(bobot);
+        if (jenisAtribut !== undefined)
+            updateData.jenisAtribut = jenisAtribut;
         const updated = await prisma.kriteria.update({
             where: { idKriteria: id },
             data: updateData,

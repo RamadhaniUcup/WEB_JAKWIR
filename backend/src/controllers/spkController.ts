@@ -1,10 +1,68 @@
 import { Response } from "express";
 import { AuthenticatedRequest } from "../middlewares/authMiddleware.js";
-import { calculateProfileMatching } from "../services/profileMatchingService.js";
+import { calculateSpkForPengajuan } from "../services/spkEngine.service.js";
 import { prisma } from "../db.js";
 
 /**
- * Memicu perhitungan Profile Matching kelayakan kredit untuk satu pengajuan
+ * Normalisasi dan Rule Penerimaan
+ */
+async function processSpkDecision(idPengajuan: number, idPenyediaJasaAdmin: number) {
+  const scores = await calculateSpkForPengajuan(idPengajuan);
+  
+  // Hanya Profile Matching yang menentukan nasib pengajuan
+  const finalScore = scores.pmScore;
+
+  let statusPeminjaman = "DIPROSES";
+  let tingkatRisiko: any = "MENENGAH";
+
+  if (finalScore >= 4.0) {
+    statusPeminjaman = "DITERIMA";
+    tingkatRisiko = "RENDAH";
+  } else if (finalScore >= 3.01 && finalScore <= 3.99) {
+    statusPeminjaman = "DITERIMA";
+    tingkatRisiko = "MENENGAH";
+  } else if (finalScore >= 2.0 && finalScore <= 3.0) {
+    statusPeminjaman = "DITOLAK";
+    tingkatRisiko = "MENENGAH";
+  } else {
+    statusPeminjaman = "DITOLAK";
+    tingkatRisiko = "TINGGI";
+  }
+
+  await prisma.surveyLapangan.upsert({
+    where: { idPengajuan },
+    update: { 
+      skorProfileMatching: finalScore, 
+      skorSaw: scores.sawScore,
+      skorWp: scores.wpScore,
+      skorTopsis: scores.topsisScore,
+      tingkatRisiko 
+    },
+    create: { 
+      idPengajuan, 
+      skorProfileMatching: finalScore, 
+      skorSaw: scores.sawScore,
+      skorWp: scores.wpScore,
+      skorTopsis: scores.topsisScore,
+      tingkatRisiko 
+    }
+  });
+
+  await prisma.pengajuan.update({
+    where: { idPengajuan },
+    data: { statusPeminjaman: statusPeminjaman as any }
+  });
+
+  return { 
+    idPengajuan, 
+    ...scores,
+    tingkatRisiko, 
+    statusPeminjaman 
+  };
+}
+
+/**
+ * Memicu perhitungan SPK untuk satu pengajuan
  */
 export async function getProfileMatchingScore(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
@@ -35,10 +93,10 @@ export async function getProfileMatchingScore(req: AuthenticatedRequest, res: Re
       return;
     }
 
-    const hasilSPK = await calculateProfileMatching(idPengajuan);
+    const hasilSPK = await processSpkDecision(idPengajuan, idPenyediaJasaAdmin);
     
     res.status(200).json({
-      message: "Perhitungan Profile Matching berhasil diselesaikan.",
+      message: "Perhitungan SPK multi-metode berhasil diselesaikan.",
       data: hasilSPK
     });
   } catch (error: any) {
@@ -50,7 +108,7 @@ export async function getProfileMatchingScore(req: AuthenticatedRequest, res: Re
 }
 
 /**
- * Memicu perhitungan Profile Matching kelayakan kredit secara massal (Bulk)
+ * Memicu perhitungan SPK secara massal (Bulk)
  */
 export async function calculateBulkSpk(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
@@ -61,7 +119,6 @@ export async function calculateBulkSpk(req: AuthenticatedRequest, res: Response)
       return;
     }
 
-    // Ambil semua pengajuan yang statusnya MENUNGGU_SPK untuk Penyedia Jasa ini
     const pendingList = await prisma.pengajuan.findMany({
       where: {
         idPenyediaJasa: idPenyediaJasaAdmin,
@@ -76,7 +133,7 @@ export async function calculateBulkSpk(req: AuthenticatedRequest, res: Response)
 
     const results = [];
     for (const p of pendingList) {
-      const resSpk = await calculateProfileMatching(p.idPengajuan);
+      const resSpk = await processSpkDecision(p.idPengajuan, idPenyediaJasaAdmin);
       results.push(resSpk);
     }
 
@@ -90,5 +147,52 @@ export async function calculateBulkSpk(req: AuthenticatedRequest, res: Response)
     res.status(500).json({ 
       message: error.message || "Gagal melakukan perhitungan massal." 
     });
+  }
+}
+
+/**
+ * Mendapatkan laporan komparasi 4 metode SPK
+ */
+export async function getLaporanSpk(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const idPenyediaJasaAdmin = req.user?.idPenyediaJasa;
+    if (!idPenyediaJasaAdmin) {
+      res.status(403).json({ message: "Forbidden." });
+      return;
+    }
+
+    const laporanList = await prisma.pengajuan.findMany({
+      where: {
+        idPenyediaJasa: idPenyediaJasaAdmin,
+        survey: { isNot: null } // Hanya pengajuan yang sudah ada hasil survey/SPK
+      },
+      include: {
+        nasabah: {
+          select: { namaNasabah: true }
+        },
+        survey: true
+      },
+      orderBy: {
+        idPengajuan: "desc"
+      }
+    });
+
+    const data = laporanList.map((p) => ({
+      idPengajuan: p.idPengajuan,
+      namaNasabah: p.nasabah.namaNasabah,
+      jumlahKredit: Number(p.jumlahKredit),
+      lamaTenor: p.lamaTenor,
+      pmScore: p.survey?.skorProfileMatching,
+      sawScore: p.survey?.skorSaw,
+      wpScore: p.survey?.skorWp,
+      topsisScore: p.survey?.skorTopsis,
+      tingkatRisiko: p.survey?.tingkatRisiko,
+      statusPeminjaman: p.statusPeminjaman
+    }));
+
+    res.status(200).json({ data });
+  } catch (error: any) {
+    console.error("Error get laporan SPK:", error);
+    res.status(500).json({ message: "Gagal memuat laporan SPK." });
   }
 }

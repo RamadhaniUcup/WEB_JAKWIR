@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getProfileMatchingScore, calculateBulkSpk } from "../controllers/spkController.js";
+import { getProfileMatchingScore, calculateBulkSpk, getLaporanSpk } from "../controllers/spkController.js";
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddleware.js";
 
 const router = Router();
@@ -8,6 +8,7 @@ const router = Router();
 router.use(verifyToken);
 router.use(authorizeRoles("SUPER ADMIN", "ADMIN"));
 
+router.get("/laporan", getLaporanSpk);
 router.post("/hitung/:idPengajuan", getProfileMatchingScore);
 router.post("/hitung-bulk", calculateBulkSpk);
 

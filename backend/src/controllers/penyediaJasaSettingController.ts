@@ -14,7 +14,7 @@ export async function updatePenyediaJasaProfile(req: AuthenticatedRequest, res: 
       return;
     }
 
-    const { namaPenyediaJasa, alamat, limitPengajuan, limitTenor, persentaseCf, persentaseSf } = req.body;
+    const { namaPenyediaJasa, alamat, limitPengajuan, limitTenor, persentaseCf, persentaseSf, metodeSpkAktif } = req.body;
 
     const dataUpdate: any = {};
     if (namaPenyediaJasa !== undefined) dataUpdate.namaPenyediaJasa = namaPenyediaJasa;
@@ -23,6 +23,7 @@ export async function updatePenyediaJasaProfile(req: AuthenticatedRequest, res: 
     if (limitTenor !== undefined) dataUpdate.limitTenor = Number(limitTenor);
     if (persentaseCf !== undefined) dataUpdate.persentaseCf = Number(persentaseCf);
     if (persentaseSf !== undefined) dataUpdate.persentaseSf = Number(persentaseSf);
+    if (metodeSpkAktif !== undefined) dataUpdate.metodeSpkAktif = metodeSpkAktif;
 
     const updated = await prisma.penyediaJasa.update({
       where: { idPenyediaJasa: idPenyediaJasa as number },

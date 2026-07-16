@@ -80,7 +80,7 @@ export async function createKriteria(req: AuthenticatedRequest, res: Response): 
       return;
     }
 
-    const { idPenyediaJasa, kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor } = req.body;
+    const { idPenyediaJasa, kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor, bobot, jenisAtribut } = req.body;
 
     if (!idPenyediaJasa || !kodeKriteria || !namaKriteria || !nilaiTarget || !jenisFaktor) {
       res.status(400).json({ message: "Data kriteria tidak lengkap." });
@@ -101,6 +101,8 @@ export async function createKriteria(req: AuthenticatedRequest, res: Response): 
         namaKriteria,
         nilaiTarget: Number(nilaiTarget),
         jenisFaktor: jenisFaktor as "CORE" | "SECONDARY",
+        bobot: bobot !== undefined ? Number(bobot) : 0,
+        jenisAtribut: (jenisAtribut as "BENEFIT" | "COST") || "BENEFIT",
       },
     });
 
@@ -122,7 +124,7 @@ export async function updateKriteria(req: AuthenticatedRequest, res: Response): 
     }
 
     const id = Number(req.params.id);
-    const { kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor } = req.body;
+    const { kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor, bobot, jenisAtribut } = req.body;
 
     const existingKriteria = await prisma.kriteria.findUnique({
       where: { idKriteria: id },
@@ -138,6 +140,8 @@ export async function updateKriteria(req: AuthenticatedRequest, res: Response): 
     if (namaKriteria !== undefined) updateData.namaKriteria = namaKriteria;
     if (nilaiTarget !== undefined) updateData.nilaiTarget = Number(nilaiTarget);
     if (jenisFaktor !== undefined) updateData.jenisFaktor = jenisFaktor as "CORE" | "SECONDARY";
+    if (bobot !== undefined) updateData.bobot = Number(bobot);
+    if (jenisAtribut !== undefined) updateData.jenisAtribut = jenisAtribut as "BENEFIT" | "COST";
 
     const updated = await prisma.kriteria.update({
       where: { idKriteria: id },

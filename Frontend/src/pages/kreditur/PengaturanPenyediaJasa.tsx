@@ -123,6 +123,7 @@ export const PengaturanPenyediaJasa: FC = () => {
             </div>
           </div>
 
+
           {/* Bobot CF / SF Global */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 border-t border-white/5">
             <div>

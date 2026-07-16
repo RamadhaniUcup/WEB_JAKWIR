@@ -407,7 +407,7 @@ export function useGetKriterias(idPenyediaJasa?: number) {
 export function useCreateKriteria() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { idPenyediaJasa: number; kodeKriteria: string; namaKriteria: string; nilaiTarget: number; jenisFaktor: string }) => {
+    mutationFn: async (payload: { idPenyediaJasa: number; kodeKriteria: string; namaKriteria: string; nilaiTarget: number; jenisFaktor: string; bobot?: number; jenisAtribut?: string }) => {
       const response = await axiosClient.post("/penyedia-jasa-settings/kriteria", payload);
       return response.data;
     },
@@ -420,7 +420,7 @@ export function useCreateKriteria() {
 export function useUpdateKriteria() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { idKriteria: number; kodeKriteria?: string; namaKriteria?: string; nilaiTarget?: number; jenisFaktor?: string }) => {
+    mutationFn: async (payload: { idKriteria: number; kodeKriteria?: string; namaKriteria?: string; nilaiTarget?: number; jenisFaktor?: string; bobot?: number; jenisAtribut?: string }) => {
       const { idKriteria, ...data } = payload;
       const response = await axiosClient.put(`/penyedia-jasa-settings/kriteria/${idKriteria}`, data);
       return response.data;
@@ -509,6 +509,16 @@ export function useCalculateSpk() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pengajuanList"] });
+    },
+  });
+}
+
+export function useGetLaporanSpk() {
+  return useQuery({
+    queryKey: ["laporanSpk"],
+    queryFn: async () => {
+      const response = await axiosClient.get<{ data: any[] }>("/spk/laporan");
+      return response.data.data;
     },
   });
 }

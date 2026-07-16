@@ -15,6 +15,18 @@ enum StatusAktif {
   TIDAK_AKTIF @map("TIDAK AKTIF")
 }
 
+enum MetodeSpk {
+  PROFILE_MATCHING
+  SAW
+  WP
+  TOPSIS
+}
+
+enum JenisAtribut {
+  BENEFIT
+  COST
+}
+
 enum JenisFaktor {
   CORE
   SECONDARY
@@ -52,6 +64,7 @@ model PenyediaJasa {
   persentaseCf      Decimal     @default(60.00) @map("persentase_cf") @db.Decimal(5, 2)
   persentaseSf      Decimal     @default(40.00) @map("persentase_sf") @db.Decimal(5, 2)
 
+
   kriteria  Kriteria[]
   pengajuan Pengajuan[]
   users     Users[]
@@ -62,10 +75,16 @@ model PenyediaJasa {
 model Kriteria {
   idKriteria     Int         @id @default(autoincrement()) @map("id_kriteria")
   idPenyediaJasa Int         @map("id_penyedia_jasa")
-  kodeKriteria   String      @map("kode_kriteria") @db.Char(5)
-  namaKriteria   String      @map("nama_kriteria") @db.VarChar(100)
-  nilaiTarget    Int         @map("nilai_target")
-  jenisFaktor    JenisFaktor @map("jenis_faktor")
+  kodeKriteria   String       @map("kode_kriteria") @db.Char(5)
+  namaKriteria   String       @map("nama_kriteria") @db.VarChar(100)
+  
+  // Properti PM
+  nilaiTarget    Int          @default(3) @map("nilai_target")
+  jenisFaktor    JenisFaktor  @default(CORE) @map("jenis_faktor")
+
+  // Properti SAW, WP, TOPSIS
+  bobot          Decimal      @default(0.00) @db.Decimal(5, 2)
+  jenisAtribut   JenisAtribut @default(BENEFIT) @map("jenis_atribut")
 
   penyediaJasa   PenyediaJasa @relation(fields: [idPenyediaJasa], references: [idPenyediaJasa], onDelete: Cascade, onUpdate: Cascade)
   subKriteria    SubKriteria[]
@@ -121,6 +140,9 @@ model SurveyLapangan {
   idSurvey            Int             @id @default(autoincrement()) @map("id_survey")
   idPengajuan         Int             @unique @map("id_pengajuan")
   skorProfileMatching Decimal?        @map("skor_profile_matching") @db.Decimal(5, 2)
+  skorSaw             Decimal?        @default(0) @map("skor_saw") @db.Decimal(5, 2)
+  skorWp              Decimal?        @default(0) @map("skor_wp") @db.Decimal(5, 2)
+  skorTopsis          Decimal?        @default(0) @map("skor_topsis") @db.Decimal(5, 2)
   tingkatRisiko       TingkatRisiko?  @map("tingkat_risiko")
 
   pengajuan           Pengajuan       @relation(fields: [idPengajuan], references: [idPengajuan], onDelete: Cascade, onUpdate: Cascade)

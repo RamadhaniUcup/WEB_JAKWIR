@@ -58,6 +58,8 @@ export const ManageSpk: FC = () => {
   const [namaKriteria, setNamaKriteria] = useState("");
   const [nilaiTarget, setNilaiTarget] = useState(3);
   const [jenisFaktor, setJenisFaktor] = useState("CORE");
+  const [bobot, setBobot] = useState(0);
+  const [jenisAtribut, setJenisAtribut] = useState("BENEFIT");
 
   // Form Fields - Sub Kriteria
   const [deskripsiSub, setDeskripsiSub] = useState("");
@@ -69,6 +71,8 @@ export const ManageSpk: FC = () => {
     setNamaKriteria("");
     setNilaiTarget(3);
     setJenisFaktor("CORE");
+    setBobot(0);
+    setJenisAtribut("BENEFIT");
     setDeskripsiSub("");
     setNilaiRatingSub(5);
     setIsOpenForm(false);
@@ -80,6 +84,8 @@ export const ManageSpk: FC = () => {
     setNamaKriteria(k.namaKriteria);
     setNilaiTarget(k.nilaiTarget);
     setJenisFaktor(k.jenisFaktor);
+    setBobot(Number(k.bobot) || 0);
+    setJenisAtribut(k.jenisAtribut || "BENEFIT");
     setIsOpenForm(true);
   };
 
@@ -113,12 +119,12 @@ export const ManageSpk: FC = () => {
     e.preventDefault();
     if (editingId) {
       updateKriteriaMutation.mutate(
-        { idKriteria: editingId, kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor },
+        { idKriteria: editingId, kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor, bobot, jenisAtribut },
         { onSuccess: resetForm }
       );
     } else {
       createKriteriaMutation.mutate(
-        { idPenyediaJasa: selectedPjId, kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor },
+        { idPenyediaJasa: selectedPjId, kodeKriteria, namaKriteria, nilaiTarget, jenisFaktor, bobot, jenisAtribut },
         { onSuccess: resetForm }
       );
     }
@@ -307,19 +313,42 @@ export const ManageSpk: FC = () => {
                         required
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs text-slate-400 mb-2 font-bold uppercase">Nilai Target (1 - 5)</label>
-                      <select
-                        value={nilaiTarget}
-                        onChange={(e) => setNilaiTarget(Number(e.target.value))}
-                        className="w-full px-4 py-2.5 bg-[#0f172a] border border-white/10 rounded-xl text-white text-sm"
-                      >
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                      </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-2 font-bold uppercase">Target (PM)</label>
+                        <select
+                          value={nilaiTarget}
+                          onChange={(e) => setNilaiTarget(Number(e.target.value))}
+                          className="w-full px-4 py-2.5 bg-[#0f172a] border border-white/10 rounded-xl text-white text-sm"
+                        >
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
+                          <option value="4">4</option>
+                          <option value="5">5</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-2 font-bold uppercase">Atribut (S/W/T)</label>
+                        <select
+                          value={jenisAtribut}
+                          onChange={(e) => setJenisAtribut(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-[#0f172a] border border-white/10 rounded-xl text-white text-sm"
+                        >
+                          <option value="BENEFIT">BENEFIT</option>
+                          <option value="COST">COST</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-2 font-bold uppercase">Bobot (S/W/T)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={bobot}
+                          onChange={(e) => setBobot(Number(e.target.value))}
+                          className="w-full px-4 py-2.5 bg-[#0f172a] border border-white/10 rounded-xl text-white text-sm"
+                        />
+                      </div>
                     </div>
                     <div className="flex gap-3">
                       <button
@@ -347,19 +376,21 @@ export const ManageSpk: FC = () => {
                     <tr className="border-b border-white/10 bg-white/3 text-[10px] text-slate-400 font-bold uppercase">
                       <th className="p-4">Kode</th>
                       <th className="p-4">Nama Kriteria</th>
-                      <th className="p-4">Nilai Target</th>
-                      <th className="p-4">Faktor</th>
+                      <th className="p-4">Target (PM)</th>
+                      <th className="p-4">Faktor (PM)</th>
+                      <th className="p-4">Atribut (SWT)</th>
+                      <th className="p-4">Bobot (SWT)</th>
                       <th className="p-4 text-right">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 text-sm">
                     {loadKriteria ? (
                       <tr>
-                        <td colSpan={5} className="p-4 text-center text-slate-500 text-xs">Memuat data kriteria...</td>
+                        <td colSpan={7} className="p-4 text-center text-slate-500 text-xs">Memuat data kriteria...</td>
                       </tr>
                     ) : kriterias?.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-4 text-center text-slate-500 text-xs">Belum ada data kriteria.</td>
+                        <td colSpan={7} className="p-4 text-center text-slate-500 text-xs">Belum ada data kriteria.</td>
                       </tr>
                     ) : (
                       kriterias?.map((k) => (
@@ -372,6 +403,12 @@ export const ManageSpk: FC = () => {
                               {k.jenisFaktor}
                             </span>
                           </td>
+                          <td className="p-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${k.jenisAtribut === "BENEFIT" ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
+                              {k.jenisAtribut}
+                            </span>
+                          </td>
+                          <td className="p-4 font-bold text-cyan-400">{Number(k.bobot).toFixed(2)}</td>
                           <td className="p-4 text-right space-x-2">
                             <button
                               onClick={() => handleEditKriteria(k)}

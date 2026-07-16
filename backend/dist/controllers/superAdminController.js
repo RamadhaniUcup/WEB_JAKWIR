@@ -17,7 +17,7 @@ export async function getPenyediaJasas(req, res) {
 }
 export async function createPenyediaJasa(req, res) {
     try {
-        const { namaPenyediaJasa, alamat, statusAktif, limitPengajuan, limitTenor } = req.body;
+        const { namaPenyediaJasa, alamat, statusAktif, limitPengajuan, limitTenor, persentaseCf, persentaseSf } = req.body;
         if (!namaPenyediaJasa || !alamat) {
             res.status(400).json({ message: "Nama penyedia jasa dan alamat wajib diisi." });
             return;
@@ -29,6 +29,8 @@ export async function createPenyediaJasa(req, res) {
                 statusAktif: statusAktif || "AKTIF",
                 limitPengajuan: limitPengajuan !== undefined ? Number(limitPengajuan) : 0,
                 limitTenor: limitTenor !== undefined ? Number(limitTenor) : 12,
+                persentaseCf: persentaseCf !== undefined ? Number(persentaseCf) : 60,
+                persentaseSf: persentaseSf !== undefined ? Number(persentaseSf) : 40,
             },
         });
         res.status(201).json({ message: "Penyedia jasa berhasil dibuat.", data: newPj });
@@ -41,7 +43,7 @@ export async function createPenyediaJasa(req, res) {
 export async function updatePenyediaJasa(req, res) {
     try {
         const idPenyediaJasa = Number(req.params.id);
-        const { namaPenyediaJasa, alamat, statusAktif, limitPengajuan, limitTenor } = req.body;
+        const { namaPenyediaJasa, alamat, statusAktif, limitPengajuan, limitTenor, persentaseCf, persentaseSf } = req.body;
         const exists = await prisma.penyediaJasa.findUnique({ where: { idPenyediaJasa } });
         if (!exists) {
             res.status(404).json({ message: "Penyedia jasa tidak ditemukan." });
@@ -58,6 +60,10 @@ export async function updatePenyediaJasa(req, res) {
             dataUpdate.limitPengajuan = Number(limitPengajuan);
         if (limitTenor !== undefined)
             dataUpdate.limitTenor = Number(limitTenor);
+        if (persentaseCf !== undefined)
+            dataUpdate.persentaseCf = Number(persentaseCf);
+        if (persentaseSf !== undefined)
+            dataUpdate.persentaseSf = Number(persentaseSf);
         const updated = await prisma.penyediaJasa.update({
             where: { idPenyediaJasa },
             data: dataUpdate,

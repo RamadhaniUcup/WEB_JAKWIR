@@ -26,6 +26,7 @@ import { DashboardPenyediaJasa } from "./pages/kreditur/DashboardPenyediaJasa.ts
 import { DataPengajuan } from "./pages/kreditur/DataPengajuan.tsx";
 import { KalkulasiSpk } from "./pages/kreditur/KalkulasiSpk.tsx";
 import { PengaturanPenyediaJasa } from "./pages/kreditur/PengaturanPenyediaJasa.tsx";
+import { LaporanSpk } from "./pages/kreditur/LaporanSpk.tsx";
 
 // Pages - Super Admin
 import { DashboardSuperAdmin } from "./pages/super-admin/DashboardSuperAdmin.tsx";
@@ -85,6 +86,14 @@ function App() {
               element={
                 <PenyediaJasaDashboardLayout>
                   <KalkulasiSpk />
+                </PenyediaJasaDashboardLayout>
+              } 
+            />
+            <Route 
+              path="/penyedia-jasa/laporan" 
+              element={
+                <PenyediaJasaDashboardLayout>
+                  <LaporanSpk />
                 </PenyediaJasaDashboardLayout>
               } 
             />
